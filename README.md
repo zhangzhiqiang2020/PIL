@@ -37,7 +37,7 @@ if(!("BiocManager" %in% rownames(installed.packages()))) install.packages("BiocM
 # first, install basic packages: remotes, tidyverse
 BiocManager::install(c('remotes','tidyverse'), dependencies=T)
 
-# then, install the package 'PIO' (now hosted at github)
+# then, install the package 'PIL' (now hosted at github)
 BiocManager::install("zhangzhiqiang2020/PIL", dependencies=T, force=T)
 
 # check the package 'PIL' successfully installed
