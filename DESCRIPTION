@@ -1,0 +1,49 @@
+Package: PIL
+Type: Package
+Title: Priority Index-Based Integration of Multi-Omics Summary Data for Lymphoma Therapeutic Candidate Identification
+Version: 0.1.0
+Authors@R: c(person("Zhiqiang", "Zhang", email="zqzhang94@sjtu.edu.cn", role=c("aut","cre")))
+Maintainer: Zhiqiang Zhang <zqzhang94@sjtu.edu.cn>
+Depends: R (>= 4.2.0), igraph, ggplot2
+Suggests: coin, foreach, ggraph, ggridges, grid, gridExtra, MatrixEQTL, RColorBrewer, ROCR, ggupset, rtracklayer, Gviz, MASS, dnet, graphics, grDevices, S4Vectors, utils, ggbio, GenomeInfoDb, doParallel, fgsea, scales, supraHex, data.tree, jsonlite
+Description: In this package, a series of functions are designed to enable the integration of genomic summary data arising from multi-omics profilings. The profilings include but are not limited to genomic mutations, transcriptome, proteome and phosphoproteome. The package is aimed to identify therapeutic candidates, including both therapeutic targets and repurposed drugs.
+License: MIT + file LICENSE
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
+Collate: 
+    'ClassMethod-PIONE.r'
+    'oAttack.r'
+    'oCheckParallel.r'
+    'oColormap.r'
+    'oCombineNet.r'
+    'oDefineNet.r'
+    'oGGnetwork.r'
+    'oHeatmap.r'
+    'oIG2TB.r'
+    'oLayout.r'
+    'oNetInduce.r'
+    'oPieplot.r'
+    'oPier.r'
+    'oPierAnno.r'
+    'oPierGenes.r'
+    'oPierManhattan.r'
+    'oPierMatrix.r'
+    'oPierSubnet.r'
+    'oRDS.r'
+    'oRWR.r'
+    'oRepurpose.r'
+    'oSEA.r'
+    'oSEAadv.r'
+    'oSEAballoon.r'
+    'oSEAextract.r'
+    'oSEAforest.r'
+    'oSparseMatrix.r'
+    'oSubneterGenes.r'
+    'oSymbol2GeneID.r'
+    'oTB2IG.r'
+    'oUpsetAdv.r'
+    'oVisEvidence.r'
+    'oVisEvidenceAdv.r'
+    'test.r'
+Imports: BiocGenerics, ggraph, dplyr, forcats, GenomicRanges, ggnetwork, ggrepel, IRanges, magrittr, Matrix, methods, osfr, purrr, readr, stats, stringr, tibble, tidyr, XML, pbapply, curl
