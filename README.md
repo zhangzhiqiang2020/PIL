@@ -40,7 +40,7 @@ BiocManager::install(c('remotes','tidyverse'), dependencies=T)
 # then, install the package 'PIO' (now hosted at github)
 BiocManager::install("zhangzhiqiang2020/PIL", dependencies=T, force=T)
 
-# check the package 'PIO' successfully installed
+# check the package 'PIL' successfully installed
 library(help=PIL)
 ```
 
