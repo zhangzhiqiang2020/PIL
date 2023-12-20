@@ -135,7 +135,7 @@ oPierMatrix <- function(list_pNode, displayBy=c("score","rank","weight","pvalue"
 	if(displayBy!='evidence'){
 		## Combine into a data frame called 'df_predictor'
 		ls_priority <- pbapply::pblapply(list_pNode, function(pNode){
-			p <- pNode$priority %>% tibble::column_to_rownames('name')
+			p <- pNode$priority #%>% tibble::column_to_rownames('name')
 			ind <- match(nodes, rownames(p))
 			#ind <- ind[!is.na(ind)]
 			if(displayBy=='score' | displayBy=='pvalue'){
