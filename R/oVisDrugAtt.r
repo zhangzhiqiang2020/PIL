@@ -18,7 +18,7 @@
 #' @include oVisDrugAtt.r
 #' @examples
 
-oVisDrugAtt <- function(data, member.sortBy = NULL, color = "cyan4", shape = 18, size = 2, label.height.unit = NULL, drugs.customised = NULL) {
+oVisDrugAtt <- function(data, member.sortBy = NULL, color = "cyan4", shape = 18, size = 2, drugs.customised = NULL) {
 
   member <- value <- i <- NULL
 
