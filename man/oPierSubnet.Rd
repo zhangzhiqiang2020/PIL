@@ -62,7 +62,7 @@ The priority score will be first scaled to the range x=[0 100] and then is conve
 \examples{
 \dontrun{
 # find maximum-scoring subnet with the desired node number=50
-subnet <- oPierSubnet(pNode, priority.quantile = 0.1, subnet.size = 50)
+subnet <- oPierSubnet(pNode, priority.quantile=0.1, subnet.size=50)
 }
 }
 \seealso{

@@ -17,6 +17,14 @@
 #' @seealso \code{\link{oVisDrugAtt}}
 #' @include oVisDrugAtt.r
 #' @examples
+#'  \dontrun{
+#' set.seed(85)
+#' data <- rbind(df_best, df_single) %>% distinct() %>% 
+#'     arrange(i,frac.disconnected) %>%
+#'     select(drug,frac.disconnected, nodes.removed) %>%
+#'     rename_with(~c("drug","value","member")) 
+#'     p<- data %>% oVisDrugAtt()
+#'     }
 
 oVisDrugAtt <- function(data, member.sortBy = NULL, color = "cyan4", shape = 18, size = 2, drugs.customised = NULL) {
 

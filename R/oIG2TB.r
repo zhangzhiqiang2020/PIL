@@ -13,33 +13,32 @@
 #' @examples
 #' set.seed(825)
 #' ig <- sample_pa(20)
-#' V(ig)$name <- seq(1, vcount(ig))
-#' ig %>% oIG2TB("edges")
-#' ig %>% oIG2TB("nodes")
-oIG2TB <- function(ig, what = c("edges", "nodes")) {
-  what <- match.arg(what)
+#' V(ig)$name <- seq(1,vcount(ig))
+#' ig %>% oIG2TB('edges')
+#' ig %>% oIG2TB('nodes')
 
-  name <- name_tmp <- NULL
-
-  if (is(ig, "igraph")) {
-    if (what == "edges") {
-      edges <- igraph::as_data_frame(ig, what = "edges") %>% tibble::as_tibble()
-      return(edges)
-    } else if (what == "nodes") {
-      if (V(ig)$name %>% duplicated() %>% any()) {
-        V(ig)$name_tmp <- V(ig)$name
-        V(ig)$name <- seq_len(igraph::vcount(ig))
-        nodes <- igraph::as_data_frame(ig, what = "vertices") %>%
-          tibble::as_tibble() %>%
-          dplyr::select(-name) %>%
-          dplyr::rename(name = name_tmp) %>%
-          dplyr::select(name, dplyr::everything())
-      } else {
-        nodes <- igraph::as_data_frame(ig, what = "vertices") %>% tibble::as_tibble()
-      }
-      return(nodes)
-    }
-  } else {
-    return(NULL)
-  }
+oIG2TB <- function(ig, what=c('edges','nodes'))
+{
+    what <- match.arg(what)
+    
+    name <- name_tmp <- NULL
+    
+   	if(is(ig,"igraph")){
+   		
+   		if(what=='edges'){
+   			edges <- igraph::as_data_frame(ig, what="edges") %>% tibble::as_tibble()
+   			return(edges)
+   		}else if(what=='nodes'){
+   			if(V(ig)$name %>% duplicated() %>% any()){
+   				V(ig)$name_tmp <- V(ig)$name
+   				V(ig)$name <- seq_len(igraph::vcount(ig))
+   				nodes <- igraph::as_data_frame(ig, what="vertices") %>% tibble::as_tibble() %>% dplyr::select(-name) %>% dplyr::rename(name=name_tmp) %>% dplyr::select(name, dplyr::everything())
+   			}else{
+   				nodes <- igraph::as_data_frame(ig, what="vertices") %>% tibble::as_tibble()
+   			}
+   			return(nodes)
+   		}
+	}else{
+		return(NULL)
+	}
 }

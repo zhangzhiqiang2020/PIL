@@ -27,13 +27,13 @@ None
 }
 \examples{
 # create a sparse matrix of 4 X 2
-input.file <- rbind(c("R1", "C1", 1), c("R2", "C1", 1), c("R2", "C2", 1), c("R3", "C2", 1), c("R4", "C1", 1))
+input.file <- rbind(c('R1','C1',1), c('R2','C1',1), c('R2','C2',1), c('R3','C2',1), c('R4','C1',1))
 res <- oSparseMatrix(input.file)
 res
 # get a full matrix
 as.matrix(res)
 
-res <- oSparseMatrix(input.file, columns = c("C1", "C2", "C3"))
+res <- oSparseMatrix(input.file, columns=c('C1','C2','C3'))
 res
 }
 \seealso{

@@ -66,9 +66,9 @@ The algorithm identifying a subnetwork is implemented in the dnet package (http:
 \dontrun{
 # perform network analysis
 # 1) find maximum-scoring subnet based on the given significance threshold
-subnet <- oSubneterGenes(data = data, network = "STRING_high", subnet.significance = 0.01)
+subnet <- oSubneterGenes(data=data, network="STRING_high", subnet.significance=0.01)
 # 2) find maximum-scoring subnet with the desired node number=50
-subnet <- oSubneterGenes(data = data, network = "STRING_high", subnet.size = 50)
+subnet <- oSubneterGenes(data=data, network="STRING_high", subnet.size=50)
 }
 }
 \seealso{

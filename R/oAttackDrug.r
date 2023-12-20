@@ -14,6 +14,24 @@
 #' @seealso \code{\link{oAttackDrug}}
 #' @include oAttackDrug.r
 #' @examples
+#' \dontrun{
+#' drug.nodes <- pbapply::pblapply(drug_names,function(x){
+#' DTT %>% transmute(drug=drug,Symbol=Symbol,phase=phase) %>%
+#' group_by(drug,phase) %>% 
+#' summarise(Targets=str_c(Symbol,collapse = ","),.groups = 'drop') %>% 
+#' filter(drug==x,phase!=1,phase!=2) %>% 
+#' pull(Targets) %>% str_split(",") %>% unlist() %>% unique() %>% 
+#' intersect((subg %>% oIG2TB('nodes') %>% pull(name)))
+#' })
+#' names(drug.nodes) <- drug_names
+#' # remove the null value 
+#' id  <- sapply(drug.nodes,function(x) !identical(x,character(0)))
+#' drug.nodes<- drug.nodes[id]
+#' # attack by drugs
+#' df <- pbapply::pblapply(1:3, function(x) {
+#' oAttackDrug(subg,drug.nodes = drug.nodes,combine.num = x)
+#' })
+#'  }
 
 oAttackDrug <- function(ig,drug.nodes=NULL,drugs.fixed=NULL,combine.num=1) {
     

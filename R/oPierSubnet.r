@@ -1,6 +1,6 @@
 #' Function to identify a gene network from top prioritised genes
 #'
-#' \code{oPierSubnet} is supposed to identify maximum-scoring gene subnetwork from a graph with the node information on priority scores, both are part of an object of class "pNode". It returns an object of class "igraph".
+#' \code{oPierSubnet} is supposed to identify maximum-scoring gene subnetwork from a graph with the node information on priority scores, both are part of an object of class "pNode". It returns an object of class "igraph". 
 #'
 #' @param pNode an object of class "pNode" (or "sTarget" or "dTarget")
 #' @param priority.quantile the quantile of the top priority genes. By default, 10% of top prioritised genes will be used for network analysis. If NULL or NA, all prioritised genes will be used
@@ -25,142 +25,147 @@
 #' @examples
 #' \dontrun{
 #' # find maximum-scoring subnet with the desired node number=50
-#' subnet <- oPierSubnet(pNode, priority.quantile = 0.1, subnet.size = 50)
+#' subnet <- oPierSubnet(pNode, priority.quantile=0.1, subnet.size=50)
 #' }
-oPierSubnet <- function(pNode, priority.quantile = 0.1, network = NA, STRING.only = NA, network.customised = NULL, subnet.significance = 0.01, subnet.size = NULL, test.permutation = FALSE, num.permutation = 100, respect = c("none", "degree"), aggregateBy = c("Ztransform", "fishers", "logistic", "orderStatistic"), verbose = TRUE, placeholder = NULL, guid = NULL) {
-  startT <- Sys.time()
-  if (verbose) {
-    message(paste(c("Start at ", as.character(startT)), collapse = ""), appendLF = TRUE)
-    message("", appendLF = TRUE)
-  }
-  ####################################################################################
 
-  ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
-  respect <- match.arg(respect)
-  aggregateBy <- match.arg(aggregateBy)
+oPierSubnet <- function(pNode, priority.quantile=0.1, network=NA, STRING.only=NA, network.customised=NULL, subnet.significance=0.01, subnet.size=NULL, test.permutation=FALSE, num.permutation=100, respect=c("none","degree"), aggregateBy=c("Ztransform","fishers","logistic","orderStatistic"), verbose=TRUE, placeholder=NULL, guid=NULL)
+{
 
-  if (is(pNode, "pNode")) {
-    df_priority <- pNode$priority[, c("name", "seed", "weight", "priority")] %>% tibble::column_to_rownames("name")
-
-    network <- network[1]
-    if (!is.na(network)) {
-      network <- match.arg(network)
-    } else {
-      if (is.null(network.customised)) {
-        network.customised <- pNode$g
-      }
+    startT <- Sys.time()
+    if(verbose){
+        message(paste(c("Start at ",as.character(startT)), collapse=""), appendLF=TRUE)
+        message("", appendLF=TRUE)
+    }
+    ####################################################################################
+    
+    ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
+    respect <- match.arg(respect)
+    aggregateBy <- match.arg(aggregateBy)
+    
+    if(is(pNode,"pNode")){
+        df_priority <- pNode$priority[, c("name","seed","weight","priority")] %>% tibble::column_to_rownames("name")
+        
+		network <- network[1]
+		if(!is.na(network)){
+			network <- match.arg(network)
+		}else{
+			if(is.null(network.customised)){
+				network.customised <- pNode$g
+			}
+		}
+		
+		priority <- df_priority$priority
+		names(priority) <- rownames(df_priority)
+		
+		## scale to the range [0 100] and then convert to pvalue-like signficant level
+		x <- priority
+		y <- (x - min(x,na.rm=TRUE)) / (max(x,na.rm=TRUE) - min(x,na.rm=TRUE))
+		pval <- 10^(-100*y)
+		
+	}else if(is(pNode,"sTarget") | is(pNode,"dTarget")){
+    	df_priority <- pNode$priority[, c("name","rank","rating")] %>% tibble::column_to_rownames("name")
+    	df_priority$priority <- df_priority$rating
+    	
+    	network <- network[1]
+		if(!is.na(network)){
+			network <- match.arg(network)
+		}else{
+			if(is.null(network.customised)){
+				network.customised <- pNode$metag
+			}
+		}
+		
+		priority <- df_priority$priority
+		names(priority) <- rownames(df_priority)
+		
+		##############
+		# convert into pvalue by 10^(-x*2)
+		x <- priority
+		pval <- 10^(-x*2)
+		##############
+				
+    }else{
+    	stop("The function must apply to a 'pNode' or 'sTarget' or 'dTarget' object.\n")
     }
 
-    priority <- df_priority$priority
-    names(priority) <- rownames(df_priority)
-
-    ## scale to the range [0 100] and then convert to pvalue-like signficant level
-    x <- priority
-    y <- (x - min(x, na.rm = TRUE)) / (max(x, na.rm = TRUE) - min(x, na.rm = TRUE))
-    pval <- 10^(-100 * y)
-  } else if (is(pNode, "sTarget") | is(pNode, "dTarget")) {
-    df_priority <- pNode$priority[, c("name", "rank", "rating")] %>% tibble::column_to_rownames("name")
-    df_priority$priority <- df_priority$rating
-
-    network <- network[1]
-    if (!is.na(network)) {
-      network <- match.arg(network)
-    } else {
-      if (is.null(network.customised)) {
-        network.customised <- pNode$metag
-      }
+    
+	if(verbose){
+		now <- Sys.time()
+		message(sprintf("The '%s' object contains %d prioritised genes", class(pNode), length(priority)), appendLF=TRUE)
+	}
+	
+	## only keep the top priority (quantile)
+	## priority quantile
+	priority.quantile <- as.numeric(priority.quantile)
+	if(length(priority.quantile>0 & priority.quantile<1) & !is.na(priority.quantile)){
+		cf <- stats::quantile(pval, priority.quantile, na.rm=TRUE)
+		ind <- which(pval<cf)
+		pval <- pval[ind]
+		
+		priority <- priority[ind]
+	}
+    
+	if(verbose){
+		now <- Sys.time()
+		message(sprintf("Among prioritised genes, %d genes are used for network analysis", length(pval)), appendLF=TRUE)
+	}
+    
+	if(verbose){
+		now <- Sys.time()
+		message(sprintf("\t maximum priority: %1.2e; minimum priority: %1.2e", max(priority), min(priority)), appendLF=TRUE)
+		message(sprintf("\t minimum p-value: %1.2e; maximum p-value: %1.2e", min(pval), max(pval)), appendLF=TRUE)
+	}
+    
+    #############################################################################################
+    
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("\n#######################################################"))
+        message(sprintf("oSubneterGenes is being called (%s):", as.character(now)), appendLF=TRUE)
+        message(sprintf("#######################################################"))
     }
-
-    priority <- df_priority$priority
-    names(priority) <- rownames(df_priority)
-
-    ##############
-    # convert into pvalue by 10^(-x*2)
-    x <- priority
-    pval <- 10^(-x * 2)
-    ##############
-  } else {
-    stop("The function must apply to a 'pNode' or 'sTarget' or 'dTarget' object.\n")
-  }
-
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("The '%s' object contains %d prioritised genes", class(pNode), length(priority)), appendLF = TRUE)
-  }
-
-  ## only keep the top priority (quantile)
-  ## priority quantile
-  priority.quantile <- as.numeric(priority.quantile)
-  if (length(priority.quantile > 0 & priority.quantile < 1) & !is.na(priority.quantile)) {
-    cf <- stats::quantile(pval, priority.quantile, na.rm = TRUE)
-    ind <- which(pval < cf)
-    pval <- pval[ind]
-
-    priority <- priority[ind]
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("Among prioritised genes, %d genes are used for network analysis", length(pval)), appendLF = TRUE)
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("\t maximum priority: %1.2e; minimum priority: %1.2e", max(priority), min(priority)), appendLF = TRUE)
-    message(sprintf("\t minimum p-value: %1.2e; maximum p-value: %1.2e", min(pval), max(pval)), appendLF = TRUE)
-  }
-
-  #############################################################################################
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("\n#######################################################"))
-    message(sprintf("oSubneterGenes is being called (%s):", as.character(now)), appendLF = TRUE)
-    message(sprintf("#######################################################"))
-  }
-
-  if (is.na(network)) {
-    subg <- oSubneterGenes(data = pval, network.customised = network.customised, seed.genes = TRUE, subnet.significance = subnet.significance, subnet.size = subnet.size, test.permutation = test.permutation, num.permutation = num.permutation, respect = respect, aggregateBy = aggregateBy, verbose = verbose, placeholder = placeholder, guid = guid)
-  } else {
-    subg <- oSubneterGenes(data = pval, network = network, STRING.only = STRING.only, network.customised = network.customised, seed.genes = TRUE, subnet.significance = subnet.significance, subnet.size = subnet.size, test.permutation = test.permutation, num.permutation = num.permutation, respect = respect, aggregateBy = aggregateBy, verbose = verbose, placeholder = placeholder, guid = guid)
-  }
-
-  # extract relevant info
-  if (ecount(subg) > 0 && is(subg, "igraph")) {
-    relations <- igraph::get.data.frame(subg, what = "edges")[, c(1, 2)]
-    if (!is.null(subg$combinedP)) {
-      relations$edgeConfidence <- igraph::get.data.frame(subg, what = "edges")[, "edgeConfidence"]
+    
+    if(is.na(network)){
+    	subg <- oSubneterGenes(data=pval, network.customised=network.customised, seed.genes=TRUE, subnet.significance=subnet.significance, subnet.size=subnet.size, test.permutation=test.permutation, num.permutation=num.permutation, respect=respect, aggregateBy=aggregateBy, verbose=verbose, placeholder=placeholder, guid=guid)
+    }else{
+    	subg <- oSubneterGenes(data=pval, network=network, STRING.only=STRING.only, network.customised=network.customised, seed.genes=TRUE, subnet.significance=subnet.significance, subnet.size=subnet.size, test.permutation=test.permutation, num.permutation=num.permutation, respect=respect, aggregateBy=aggregateBy, verbose=verbose, placeholder=placeholder, guid=guid)
+	}
+	
+	# extract relevant info
+	if(ecount(subg)>0 && is(subg,"igraph")){
+		relations <- igraph::get.data.frame(subg, what="edges")[,c(1,2)]
+		if(!is.null(subg$combinedP)){
+			relations$edgeConfidence <- igraph::get.data.frame(subg, what="edges")[,"edgeConfidence"]
+		}
+		nodes <- igraph::get.data.frame(subg, what="vertices")
+		nodes <- cbind(name=nodes$name, description=nodes$description, significance=nodes$significance, score=nodes$score, type=nodes$type, priority=priority[rownames(nodes)])
+		if(igraph::is.directed(subg)){
+			subnet <- igraph::graph.data.frame(d=relations, directed=TRUE, vertices=nodes)
+		}else{
+			subnet <- igraph::graph.data.frame(d=relations, directed=FALSE, vertices=nodes)
+		}
+		if(!is.null(subg$combinedP)){
+			subnet$combinedP <- subg$combinedP
+		}
+	}else{
+		subnet <- NULL
+	}
+	
+	if(verbose){
+        now <- Sys.time()
+        message(sprintf("#######################################################"))
+        message(sprintf("oSubneterGenes has finished (%s)!", as.character(now)), appendLF=TRUE)
+        message(sprintf("#######################################################\n"))
     }
-    nodes <- igraph::get.data.frame(subg, what = "vertices")
-    nodes <- cbind(name = nodes$name, description = nodes$description, significance = nodes$significance, score = nodes$score, type = nodes$type, priority = priority[rownames(nodes)])
-    if (igraph::is.directed(subg)) {
-      subnet <- igraph::graph.data.frame(d = relations, directed = TRUE, vertices = nodes)
-    } else {
-      subnet <- igraph::graph.data.frame(d = relations, directed = FALSE, vertices = nodes)
+    
+    ####################################################################################
+    endT <- Sys.time()
+    if(verbose){
+        message(paste(c("\nFinish at ",as.character(endT)), collapse=""), appendLF=TRUE)
     }
-    if (!is.null(subg$combinedP)) {
-      subnet$combinedP <- subg$combinedP
-    }
-  } else {
-    subnet <- NULL
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("#######################################################"))
-    message(sprintf("oSubneterGenes has finished (%s)!", as.character(now)), appendLF = TRUE)
-    message(sprintf("#######################################################\n"))
-  }
-
-  ####################################################################################
-  endT <- Sys.time()
-  if (verbose) {
-    message(paste(c("\nFinish at ", as.character(endT)), collapse = ""), appendLF = TRUE)
-  }
-
-  runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units = "secs"))
-  message(paste(c("Runtime in total is: ", runTime, " secs\n"), collapse = ""), appendLF = TRUE)
-
-  return(subnet)
+    
+    runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units="secs"))
+    message(paste(c("Runtime in total is: ",runTime," secs\n"), collapse=""), appendLF=TRUE)
+    
+    return(subnet)
 }

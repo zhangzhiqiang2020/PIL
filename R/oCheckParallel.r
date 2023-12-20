@@ -14,38 +14,42 @@
 #' \dontrun{
 #' oCheckParallel()
 #' }
-oCheckParallel <- function(multicores = NULL, verbose = TRUE) {
-  # @import doParallel
-  # @import foreach
 
-  flag_parallel <- FALSE
-  pkgs <- c("doParallel", "foreach")
-  if (all(pkgs %in% rownames(utils::installed.packages()))) {
-    tmp <- sapply(pkgs, function(pkg) {
-      # suppressPackageStartupMessages(require(pkg, character.only=TRUE))
-      requireNamespace(pkg, quietly = TRUE)
-    })
-
-    if (all(tmp)) {
-      doParallel::registerDoParallel()
-      cores <- foreach::getDoParWorkers()
-      if (is.null(multicores)) {
-        multicores <- max(1, ceiling(cores))
-      } else if (is.na(multicores)) {
-        multicores <- max(1, ceiling(cores))
-      } else if (multicores < 1 | multicores > 2 * cores) {
-        multicores <- max(1, ceiling(cores))
-      } else {
-        multicores <- as.integer(multicores)
-      }
-      doParallel::registerDoParallel(cores = multicores) # register the multicore parallel backend with the 'foreach' package
-
-      if (verbose) {
-        message(sprintf("\tdo parallel computation using %d cores ...", multicores, as.character(Sys.time())), appendLF = TRUE)
-      }
-      flag_parallel <- TRUE
+oCheckParallel <- function(multicores=NULL, verbose=TRUE)
+{
+    
+    # @import doParallel
+    # @import foreach
+    
+    flag_parallel <- FALSE
+    pkgs <- c("doParallel","foreach")
+    if(all(pkgs %in% rownames(utils::installed.packages()))){
+        tmp <- sapply(pkgs, function(pkg) {
+            #suppressPackageStartupMessages(require(pkg, character.only=TRUE))
+            requireNamespace(pkg, quietly=TRUE)
+        })
+        
+        if(all(tmp)){
+            doParallel::registerDoParallel()
+            cores <- foreach::getDoParWorkers()
+            if(is.null(multicores)){
+                multicores <- max(1, ceiling(cores))
+            }else if(is.na(multicores)){
+                multicores <- max(1, ceiling(cores))
+            }else if(multicores < 1 | multicores > 2*cores){
+                multicores <- max(1, ceiling(cores))
+            }else{
+                multicores <- as.integer(multicores)
+            }
+            doParallel::registerDoParallel(cores=multicores) # register the multicore parallel backend with the 'foreach' package
+            
+            if(verbose){
+                message(sprintf("\tdo parallel computation using %d cores ...", multicores, as.character(Sys.time())), appendLF=TRUE)
+            }
+            flag_parallel <- TRUE
+        }
+        
     }
-  }
-
-  return(flag_parallel)
+    
+    return(flag_parallel)
 }

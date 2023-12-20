@@ -10,7 +10,6 @@ oVisDrugAtt(
   color = "cyan4",
   shape = 18,
   size = 2,
-  label.height.unit = NULL,
   drugs.customised = NULL
 )
 }
@@ -25,9 +24,9 @@ oVisDrugAtt(
 
 \item{size}{the point size}
 
-\item{label.height.unit}{the unit specifying the per-row height of the combination matrix. By default, it is NULL. If specified (such as 8), it will be used to decide 'combmatrix.label.height' and 'combmatrix.label.text'}
-
 \item{drugs.customised}{the customised shown of drugs in the combination matrix.}
+
+\item{label.height.unit}{the unit specifying the per-row height of the combination matrix. By default, it is NULL. If specified (such as 8), it will be used to decide 'combmatrix.label.height' and 'combmatrix.label.text'}
 
 \item{drug.levels}{how to define the levels of drug in the combination matrix It can be 'num' (the number of non-zeros for a member) or 'customised' (see 'levels.customised' below) or 'auto' (alphabeta order; by default)}
 }
@@ -39,6 +38,16 @@ an object of class "ggplot"
 }
 \note{
 none
+}
+\examples{
+ \dontrun{
+set.seed(85)
+data <- rbind(df_best, df_single) \%>\% distinct() \%>\% 
+    arrange(i,frac.disconnected) \%>\%
+    select(drug,frac.disconnected, nodes.removed) \%>\%
+    rename_with(~c("drug","value","member")) 
+    p<- data \%>\% oVisDrugAtt()
+    }
 }
 \seealso{
 \code{\link{oVisDrugAtt}}

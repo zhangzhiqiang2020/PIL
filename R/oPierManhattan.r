@@ -27,196 +27,201 @@
 #' @include oPierManhattan.r
 #' @examples
 #' \dontrun{
-#' mp <- oPierManhattan(pNode, placeholder = placeholder)
+#' mp <- oPierManhattan(pNode, placeholder=placeholder)
 #' mp$gr
 #' ## control visuals
-#' mp <- oPierManhattan(pNode, color = "ggplot2", top = 50, top.label.col = "black", y.scale = "sqrt", placeholder = placeholder)
+#' mp <- oPierManhattan(pNode, color='ggplot2', top=50, top.label.col="black", y.scale="sqrt", placeholder=placeholder)
 #' mp
 #' ## control labels
 #' # only IL genes will be labelled
-#' ind <- grep("^IL", rownames(pNode$priority))
+#' ind <- grep('^IL', rownames(pNode$priority))
 #' top.label.query <- rownames(pNode$priority)[ind]
-#' mp <- oPierManhattan(pNode, top.label.query = top.label.query, placeholder = placeholder)
+#' mp <- oPierManhattan(pNode, top.label.query=top.label.query, placeholder=placeholder)
 #' mp
 #' # only IL genes will be displayed
-#' mp <- oPierManhattan(pNode, top.label.query = top.label.query, label.query.only = TRUE, placeholder = placeholder)
+#' mp <- oPierManhattan(pNode, top.label.query=top.label.query, label.query.only=TRUE, placeholder=placeholder)
 #' mp
 #' }
-oPierManhattan <- function(pNode, color = c("darkred", "steelblue4"), point.size = 0.2, top = 10000, top.label.type = c("text", "box"), top.label.size = 2, top.label.col = "black", top.label.query = NULL, label.query.only = FALSE, chromosome.only = TRUE, y.scale = c("normal", "sqrt", "log"), y.lab = NULL, GR.Gene = c("UCSC_knownGene", "UCSC_knownCanonical"), font.family = "sans", verbose = TRUE, placeholder = NULL, guid = NULL, ...) {
-  ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
-  top.label.type <- match.arg(top.label.type)
-  y.scale <- match.arg(y.scale)
 
-  if (is(pNode, "pNode")) {
-    df_priority <- pNode$priority[, c("name", "weight", "priority")]
-  } else if (is(pNode, "sTarget") | is(pNode, "dTarget")) {
-    df_priority <- pNode$priority[, c("name", "rank", "rating")]
-    df_priority$priority <- df_priority$rating
-  } else {
-    stop("The function must apply to a 'pNode' or 'sTarget' or 'dTarget' object.\n")
-  }
+oPierManhattan <- function(pNode, color=c("darkred","steelblue4"), point.size=0.2, top=10000, top.label.type=c("text","box"), top.label.size=2, top.label.col="black", top.label.query=NULL, label.query.only=FALSE, chromosome.only=TRUE, y.scale=c("normal","sqrt","log"), y.lab=NULL, GR.Gene=c("UCSC_knownGene","UCSC_knownCanonical"), font.family="sans", verbose=TRUE, placeholder=NULL, guid=NULL, ...)
+{
 
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("Load positional information for Genes (%s) ...", as.character(now)), appendLF = TRUE)
-  }
-  gr_Gene <- oRDS(GR.Gene[1], verbose = verbose, placeholder = placeholder, guid = guid)
-  if (is.null(gr_Gene)) {
-    GR.Gene <- "UCSC_knownGene"
-    if (verbose) {
-      message(sprintf("Instead, %s will be used", GR.Gene), appendLF = TRUE)
+    ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
+    top.label.type <- match.arg(top.label.type)
+    y.scale <- match.arg(y.scale)
+
+    if(is(pNode,"pNode")){
+        df_priority <- pNode$priority[, c("name","weight","priority")]
+    }else if(is(pNode,"sTarget") | is(pNode,"dTarget")){
+    	df_priority <- pNode$priority[, c("name","rank","rating")]
+    	df_priority$priority <- df_priority$rating
+    }else{
+    	stop("The function must apply to a 'pNode' or 'sTarget' or 'dTarget' object.\n")
     }
-    gr_Gene <- oRDS(GR.Gene, verbose = verbose, placeholder = placeholder, guid = guid)
-  }
-
-  ## ONLY restricted to genes with genomic locations
-  # ind <- match(rownames(df_priority), names(gr_Gene))
-  ind <- match(df_priority$name, names(gr_Gene))
-  p_gr <- gr_Gene[ind[!is.na(ind)], ]
-  p_matrix <- df_priority[!is.na(ind), ]
-
-  ## append genomic locations to GR object
-  gr <- p_gr
-  GenomicRanges::mcols(gr) <- cbind(GenomicRanges::mcols(gr), p_matrix)
-
-  ########################################
-  if (label.query.only) {
-    if (!is.null(top.label.query)) {
-      top.label.query <- as.vector(t(top.label.query)) # just in case converting data.frame to vector
-      ind <- match(names(gr), top.label.query)
-      if (sum(!is.na(ind)) >= 1) {
-        gr <- gr[!is.na(ind)]
-      }
+    
+	if(verbose){
+		now <- Sys.time()
+		message(sprintf("Load positional information for Genes (%s) ...", as.character(now)), appendLF=TRUE)
+	}
+    gr_Gene <- oRDS(GR.Gene[1], verbose=verbose, placeholder=placeholder, guid=guid)
+    if(is.null(gr_Gene)){
+    	GR.Gene <- "UCSC_knownGene"
+		if(verbose){
+			message(sprintf("Instead, %s will be used", GR.Gene), appendLF=TRUE)
+		}
+    	gr_Gene <- oRDS(GR.Gene, verbose=verbose, placeholder=placeholder, guid=guid)
     }
-  }
-  ########################################
-
-
-  ## for sorting
-  chrlabs <- paste("chr", as.character(c(1:22, "X", "Y")), sep = "")
-  #######
-  if (chromosome.only) {
-    ind <- chrlabs %in% unique(as.character(gr@seqnames@values))
-    chrlabs <- chrlabs[ind]
-  }
-  #######
-  # eval(parse(text="seqlevels(gr) <- chrlabs"))
-  GenomeInfoDb::seqlevels(gr) <- chrlabs
-
-  ## highlight points
-  if (!is.null(top)) {
-    top <- as.integer(top)
-    if (top > length(gr)) {
-      top <- length(gr)
+    
+    ## ONLY restricted to genes with genomic locations
+	#ind <- match(rownames(df_priority), names(gr_Gene))
+	ind <- match(df_priority$name, names(gr_Gene))
+	p_gr <- gr_Gene[ind[!is.na(ind)],]
+	p_matrix <- df_priority[!is.na(ind),]
+	
+	## append genomic locations to GR object
+	gr <- p_gr
+	GenomicRanges::mcols(gr) <- cbind(GenomicRanges::mcols(gr), p_matrix)
+	
+	########################################
+	if(label.query.only){
+		if(!is.null(top.label.query)){
+			top.label.query <- as.vector(t(top.label.query)) # just in case converting data.frame to vector
+			ind <- match(names(gr), top.label.query)
+			if(sum(!is.na(ind)) >= 1){
+				gr <- gr[!is.na(ind)]
+			}
+		}
+	}
+	########################################
+	
+	
+	## for sorting
+	chrlabs <- paste('chr', as.character(c(1:22,'X','Y')), sep='')
+	#######
+	if(chromosome.only){
+		ind <- chrlabs %in% unique(as.character(gr@seqnames@values))
+		chrlabs <- chrlabs[ind]
+	}
+	#######	
+	#eval(parse(text="seqlevels(gr) <- chrlabs"))
+	GenomeInfoDb::seqlevels(gr) <- chrlabs
+	
+	## highlight points
+	if(!is.null(top)){
+		top <- as.integer(top)
+		if(top > length(gr)){
+			top <- length(gr)
+		}
+	}
+	
+	priority <- seqnames <- priority <- NULL
+	###############################
+	## calling ggbio::autoplot
+	suppressMessages(ggp <- ggbio::autoplot(object=gr, aes(y=priority,color=seqnames,alpha=priority), coord="genome", geom='point', space.skip=0.01, size=point.size))
+	
+	## extract ggplot
+	bp <- ggp@ggplot
+	df <- bp$data
+	
+	## alternative colors
+	if(!is.null(color)){
+		if(length(color)>=2){
+			alternative_colors <- color
+			chrs <- levels(df[,1])
+			N <- length(chrs)
+			cols <- rep(alternative_colors, round(N/length(alternative_colors)) + 1)[1:N]
+			names(cols) <- chrs
+			bp <- bp + scale_color_manual(values=cols) + theme(legend.position="none")
+		}else if(length(color)==1){
+			chrs <- levels(df[,1])
+			N <- length(chrs)
+			cols <- oColormap(color)(N)
+			names(cols) <- chrs
+			bp <- bp + scale_color_manual(values=cols) + theme(legend.position="none")
+		}
+	}else{
+		bp <- bp + theme(legend.position="none")
+	}
+	
+	## vline
+  	if(TRUE){
+		vline.df <- df
+		vline.df <- do.call(rbind, by(vline.df, vline.df$seqnames, function(dd){
+			data.frame(start=min(dd$start), end=max(dd$end))
+		}))
+		## compute gap
+		gap <- (vline.df$start[-1] + vline.df$end[-nrow(vline.df)])/2
+		bp <- bp + geom_vline(xintercept=gap, alpha=0.5, color='gray70') + theme(panel.grid=element_blank())
+  	}
+	
+	#bp <- bp + ggforce::facet_zoom(x=(seqnames=="chr2"))
+	
+	############
+	## highlight top label
+	############
+	if(!is.null(top)){
+		df_highlight <- bp$data[1:top,]
+		
+		#############################		
+		## restrict to top in query for labels
+		if(!is.null(top.label.query)){
+			ind <- match(df_highlight$Symbol, top.label.query)
+			if(sum(!is.na(ind)) >= 1){
+				df_highlight <- df_highlight[!is.na(ind), ]
+			}else{
+				df_highlight <- NULL
+			}
+		}
+		#############################		
+		
+		###########
+		## potentially controlling only labels those in specific chromosome
+		if(FALSE){
+			ind <- match(df_highlight$seqnames, "chr1")
+			if(sum(!is.na(ind)) >= 1){
+				df_highlight <- df_highlight[!is.na(ind), ]
+			}else{
+				df_highlight <- NULL
+			}
+		}
+		###########
+		
+		midpoint <- priority <- Symbol <- NULL
+		if(!is.null(df_highlight)){
+			if(top.label.type=="text"){
+				bp <- bp + ggrepel::geom_text_repel(data=df_highlight, aes(x=midpoint,y=priority,label=Symbol), size=top.label.size, color=top.label.col, fontface='bold.italic', point.padding=unit(0.2,"lines"), segment.color='grey50', segment.alpha=0.5, arrow=arrow(length=unit(0.01,'npc')), max.overlaps=Inf, ...)
+			}else if(top.label.type=="box"){
+				bp <- bp + ggrepel::geom_label_repel(data=df_highlight, aes(x=midpoint,y=priority,label=Symbol), size=top.label.size, color=top.label.col, fontface='bold.italic', box.padding=unit(0.2,"lines"), point.padding=unit(0.2,"lines"), segment.color='grey50', segment.alpha=0.5, arrow=arrow(length=unit(0.01,'npc')), max.overlaps=Inf, ...)
+			}
+		}
+	}
+	
+	## y scale
+    if(y.scale=="sqrt"){
+    	x <- NULL
+    	bp <- bp + scale_y_continuous(trans=scales::sqrt_trans(), breaks=scales::trans_breaks("log10", function(x) 10^x, n=2))
+    }else if(y.scale=="log"){
+    	x <- NULL
+    	bp <- bp + scale_y_continuous(trans=scales::log_trans(), breaks=scales::trans_breaks("log10", function(x) 10^x, n=2)) + annotation_logticks(sides='l')
     }
-  }
+	
+	if(!is.null(y.lab)){
+		bp <- bp + ylab(y.lab)
+	}
+	
+	bp <- bp + theme(axis.title.y=element_text(size=12), axis.text.y=element_text(color="black",size=8), axis.text.x=element_text(angle=45, hjust=1,color="black",size=10), panel.background=element_rect(fill=grDevices::rgb(0.98,0.98,0.98,1)))
+	
+	## change font family to 'Arial'
+	bp <- bp + theme(text=element_text(family=font.family))
+	
+	## put arrows on y-axis and x-axis
+	#bp <- bp + theme(axis.line.y=element_line(arrow=arrow(angle=30,length=unit(0.25,"cm"), type="open")), axis.line.x=element_line(arrow=arrow(angle=30,length=unit(0.25,"cm"), type="open")))
+	bp <- bp + theme(axis.line.y=element_line(), axis.line.x=element_line())
 
-  priority <- seqnames <- priority <- NULL
-  ###############################
-  ## calling ggbio::autoplot
-  suppressMessages(ggp <- ggbio::autoplot(object = gr, aes(y = priority, color = seqnames, alpha = priority), coord = "genome", geom = "point", space.skip = 0.01, size = point.size))
-
-  ## extract ggplot
-  bp <- ggp@ggplot
-  df <- bp$data
-
-  ## alternative colors
-  if (!is.null(color)) {
-    if (length(color) >= 2) {
-      alternative_colors <- color
-      chrs <- levels(df[, 1])
-      N <- length(chrs)
-      cols <- rep(alternative_colors, round(N / length(alternative_colors)) + 1)[1:N]
-      names(cols) <- chrs
-      bp <- bp + scale_color_manual(values = cols) + theme(legend.position = "none")
-    } else if (length(color) == 1) {
-      chrs <- levels(df[, 1])
-      N <- length(chrs)
-      cols <- oColormap(color)(N)
-      names(cols) <- chrs
-      bp <- bp + scale_color_manual(values = cols) + theme(legend.position = "none")
-    }
-  } else {
-    bp <- bp + theme(legend.position = "none")
-  }
-
-  ## vline
-  if (TRUE) {
-    vline.df <- df
-    vline.df <- do.call(rbind, by(vline.df, vline.df$seqnames, function(dd) {
-      data.frame(start = min(dd$start), end = max(dd$end))
-    }))
-    ## compute gap
-    gap <- (vline.df$start[-1] + vline.df$end[-nrow(vline.df)]) / 2
-    bp <- bp + geom_vline(xintercept = gap, alpha = 0.5, color = "gray70") + theme(panel.grid = element_blank())
-  }
-
-  # bp <- bp + ggforce::facet_zoom(x=(seqnames=="chr2"))
-
-  ############
-  ## highlight top label
-  ############
-  if (!is.null(top)) {
-    df_highlight <- bp$data[1:top, ]
-
-    #############################
-    ## restrict to top in query for labels
-    if (!is.null(top.label.query)) {
-      ind <- match(df_highlight$Symbol, top.label.query)
-      if (sum(!is.na(ind)) >= 1) {
-        df_highlight <- df_highlight[!is.na(ind), ]
-      } else {
-        df_highlight <- NULL
-      }
-    }
-    #############################
-
-    ###########
-    ## potentially controlling only labels those in specific chromosome
-    if (FALSE) {
-      ind <- match(df_highlight$seqnames, "chr1")
-      if (sum(!is.na(ind)) >= 1) {
-        df_highlight <- df_highlight[!is.na(ind), ]
-      } else {
-        df_highlight <- NULL
-      }
-    }
-    ###########
-
-    midpoint <- priority <- Symbol <- NULL
-    if (!is.null(df_highlight)) {
-      if (top.label.type == "text") {
-        bp <- bp + ggrepel::geom_text_repel(data = df_highlight, aes(x = midpoint, y = priority, label = Symbol), size = top.label.size, color = top.label.col, fontface = "bold.italic", point.padding = unit(0.2, "lines"), segment.color = "grey50", segment.alpha = 0.5, arrow = arrow(length = unit(0.01, "npc")), max.overlaps = Inf, ...)
-      } else if (top.label.type == "box") {
-        bp <- bp + ggrepel::geom_label_repel(data = df_highlight, aes(x = midpoint, y = priority, label = Symbol), size = top.label.size, color = top.label.col, fontface = "bold.italic", box.padding = unit(0.2, "lines"), point.padding = unit(0.2, "lines"), segment.color = "grey50", segment.alpha = 0.5, arrow = arrow(length = unit(0.01, "npc")), max.overlaps = Inf, ...)
-      }
-    }
-  }
-
-  ## y scale
-  if (y.scale == "sqrt") {
-    x <- NULL
-    bp <- bp + scale_y_continuous(trans = scales::sqrt_trans(), breaks = scales::trans_breaks("log10", function(x) 10^x, n = 2))
-  } else if (y.scale == "log") {
-    x <- NULL
-    bp <- bp + scale_y_continuous(trans = scales::log_trans(), breaks = scales::trans_breaks("log10", function(x) 10^x, n = 2)) + annotation_logticks(sides = "l")
-  }
-
-  if (!is.null(y.lab)) {
-    bp <- bp + ylab(y.lab)
-  }
-
-  bp <- bp + theme(axis.title.y = element_text(size = 12), axis.text.y = element_text(color = "black", size = 8), axis.text.x = element_text(angle = 45, hjust = 1, color = "black", size = 10), panel.background = element_rect(fill = grDevices::rgb(0.98, 0.98, 0.98, 1)))
-
-  ## change font family to 'Arial'
-  bp <- bp + theme(text = element_text(family = font.family))
-
-  ## put arrows on y-axis and x-axis
-  # bp <- bp + theme(axis.line.y=element_line(arrow=arrow(angle=30,length=unit(0.25,"cm"), type="open")), axis.line.x=element_line(arrow=arrow(angle=30,length=unit(0.25,"cm"), type="open")))
-  bp <- bp + theme(axis.line.y = element_line(), axis.line.x = element_line())
-
-  mp <- bp
-  mp$gr <- gr
-
-  invisible(mp)
+    mp <- bp
+    mp$gr <- gr
+    
+    invisible(mp)
 }
+
+

@@ -83,77 +83,62 @@ The interpretation of the algorithms used to account for the hierarchy of the on
 }
 \examples{
 \dontrun{
-BioGRID_HCoV <- oRDS("BioGRID_HCoV", placeholder = placeholder)
-data <- BioGRID_HCoV \%>\%
-  filter(from_tax == 2697049) \%>\%
-  count(to) \%>\%
-  pull(to)
+BioGRID_HCoV <- oRDS("BioGRID_HCoV", placeholder=placeholder)
+data <- BioGRID_HCoV \%>\% filter(from_tax==2697049) \%>\% count(to) \%>\% pull(to)
 
 # Bucket
-set <- oRDS("org.Hs.egBucket", placeholder = placeholder)
-ig <- oRDS("ig.Bucket", placeholder = placeholder)
+set <- oRDS("org.Hs.egBucket", placeholder=placeholder)
+ig <- oRDS("ig.Bucket", placeholder=placeholder)
 # KEGG
-set <- oRDS("org.Hs.egKEGG", placeholder = placeholder)
-set <- oRDS("org.Hs.egKEGGGeneticProcess", placeholder = placeholder)
-ig <- oRDS("ig.KEGG", placeholder = placeholder)
+set <- oRDS("org.Hs.egKEGG", placeholder=placeholder)
+set <- oRDS("org.Hs.egKEGGGeneticProcess", placeholder=placeholder)
+ig <- oRDS("ig.KEGG", placeholder=placeholder)
 # REACTOME
-set <- oRDS("org.Hs.egREACTOME", placeholder = placeholder)
-ig <- oRDS("ig.REACTOMEslim", placeholder = placeholder)
+set <- oRDS("org.Hs.egREACTOME", placeholder=placeholder)
+ig <- oRDS("ig.REACTOMEslim", placeholder=placeholder)
 # GOMF
-set <- oRDS("org.Hs.egGOMF", placeholder = placeholder)
-ig <- oRDS("ig.GOMF", placeholder = placeholder)
+set <- oRDS("org.Hs.egGOMF", placeholder=placeholder)
+ig <- oRDS("ig.GOMF", placeholder=placeholder)
 # org.Hs.egMsigdb
-set <- oRDS("org.Hs.egMsigdb", placeholder = placeholder)
-ig <- oRDS("ig.Msigdb", placeholder = placeholder)
+set <- oRDS("org.Hs.egMsigdb", placeholder=placeholder)
+ig <- oRDS("ig.Msigdb", placeholder=placeholder)
 # org.Hs.egEnrichr
-set <- oRDS("org.Hs.egEnrichr", placeholder = placeholder)
-set2 <- set
-set2$info <- set2$info \%>\% filter(!str_detect(namespace, "L1000"))
+set <- oRDS("org.Hs.egEnrichr", placeholder=placeholder)
+set2 <- set; set2$info <- set2$info \%>\% filter(!str_detect(namespace,'L1000'))
 
 eset <- oSEA(data, set, ig)
 eset$ig
-eset \%>\%
-  oSEAextract() \%>\%
-  write_delim("results_eset.txt", "\t")
-eset \%>\%
-  oSEAextract() \%>\%
-  filter(distance == "DiseaseDrug") \%>\%
-  oSEAforest(top = 2)
-eset \%>\%
-  oSEAextract() \%>\%
-  filter(adjp < 0.01) \%>\%
-  group_by(namespace) \%>\%
-  top_n(2, -adjp) \%>\%
-  ungroup() \%>\%
-  oSEAwheel(ig, fixed = F, edge.color = "namespace", leaf.label.orientation = "outwards", leaf.label.expansion = 1.15, limit.expansion = 2, leaf.label.size = 1.5)
+eset \%>\% oSEAextract() \%>\% write_delim('results_eset.txt','\t')
+eset \%>\% oSEAextract() \%>\% filter(distance=='DiseaseDrug') \%>\% oSEAforest(top=2)
+eset \%>\% oSEAextract() \%>\% filter(adjp<0.01) \%>\% group_by(namespace) \%>\% top_n(2,-adjp) \%>\% ungroup() \%>\% oSEAwheel(ig, fixed=F, edge.color='namespace', leaf.label.orientation='outwards', leaf.label.expansion=1.15,limit.expansion=2, leaf.label.size=1.5)
 
-# ggraph
+# ggraph 
 ## 1) based on eset$ig (default)
-gp <- oSEAggraph(eset, fixed = F, leave = F, slim = c(0, 10), node.label.direction = "leftright")
+gp <- oSEAggraph(eset, fixed=F, leave=F, slim=c(0,10),  node.label.direction="leftright")
 ## 2) based on eset$ig (shortest version)
-subg <- oDAGinduce(eset$ig, path.mode = "shortest_paths")
-gp <- oSEAggraph(eset, subg, fixed = F, leave = F, slim = c(0, 10), node.label.direction = "leftright")
+subg <- oDAGinduce(eset$ig, path.mode="shortest_paths")
+gp <- oSEAggraph(eset, subg, fixed=F, leave=F, slim=c(0,10),  node.label.direction="leftright")
 ## 3) based on eset$ig (the clade "")
-# eset$ig \%>\% oIG2TB('nodes') \%>\% filter(distance==1) \%>\% arrange(IC) \%>\% pull(name)
-clade <- oDAGclade(eset$ig, "catalytic activity")
-gp <- oSEAggraph(eset, clade, fixed = F, leave = F, slim = c(0, 10), node.label.direction = "leftright")
+#eset$ig \%>\% oIG2TB('nodes') \%>\% filter(distance==1) \%>\% arrange(IC) \%>\% pull(name)
+clade <- oDAGclade(eset$ig, 'catalytic activity')
+gp <- oSEAggraph(eset, clade, fixed=F, leave=F, slim=c(0,10),  node.label.direction="leftright")
 ## 4) do comparisons
-gp <- oSEAggraph(eset, fixed = F, slim = c(0, 10), node.label.size = 0)
-gp1 <- oSEAggraph(eset, subg, fixed = F, slim = c(0, 10), node.label.size = 0)
-gp2 <- oSEAggraph(eset, clade, fixed = F, slim = c(0, 10), node.label.size = 0)
+gp <- oSEAggraph(eset, fixed=F, slim=c(0,10), node.label.size=0)
+gp1 <- oSEAggraph(eset, subg, fixed=F, slim=c(0,10), node.label.size=0)
+gp2 <- oSEAggraph(eset, clade, fixed=F, slim=c(0,10), node.label.size=0)
 library(patchwork)
-gp + gp1 + gp2 + plot_layout(guides = "collect")
+gp + gp1 + gp2 + plot_layout(guides='collect')
 
 # advanced visual
-gp <- oSEAggraph(df, fixed = F, leave = F, layout = "dendrogram", node.label.size = 0)
+gp <- oSEAggraph(df, fixed=F, leave=F, layout='dendrogram', node.label.size=0)
 ## alternative
-eset$info \%>\% filter(adjp < 0.05) -> df
+eset$info \%>\% filter(adjp<0.05) -> df
 eset$ig \%>\% oDAGtree() -> ig.tree
-gp <- oSEAggraph(df, ig.tree, fixed = F, leave = F, layout = "dendrogram", node.label.size = 0)
+gp <- oSEAggraph(df, ig.tree, fixed=F, leave=F, layout='dendrogram', node.label.size=0)
 ## labelling
-gp + ggraph::geom_node_text(aes(x = x * 1.1, y = y * 1.1, filter = leaf, label = name, angle = node_angle(x, y)), repel = F, hjust = 0, size = 2) + expand_limits(x = c(-2, 2), y = c(-2, 2)) -> gp
-gp + geom_edge_diagonal2(aes(color = node.term_namespace, alpha = stat(index)), width = 0.2) + guides(edge_alpha = F) -> gp1
-gp1 + theme(legend.box = "vertical") + guides(edge_colour = guide_legend("namespace", direction = "vertical"), size = guide_legend("-log10(FDR)", "top", direction = "horizontal", ncol = 3), color = guide_colorbar("Z-score", "top", direction = "horizontal", barheight = 0.5)) + theme(legend.position = "right")
+gp + ggraph::geom_node_text(aes(x=x*1.1, y=y*1.1, filter=leaf, label=name, angle=node_angle(x,y)), repel=F, hjust=0, size=2) + expand_limits(x=c(-2,2), y=c(-2,2)) -> gp
+gp + geom_edge_diagonal2(aes(color=node.term_namespace, alpha=stat(index)),width=0.2) + guides(edge_alpha=F) -> gp1
+gp1 + theme(legend.box='vertical') + guides(edge_colour=guide_legend('namespace',direction="vertical"), size=guide_legend('-log10(FDR)','top',direction="horizontal",ncol=3), color=guide_colorbar('Z-score','top',direction="horizontal",barheight=0.5)) + theme(legend.position='right')
 }
 }
 \seealso{

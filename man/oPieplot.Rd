@@ -43,7 +43,7 @@ a ggplot object.
 }
 \examples{
 \dontrun{
-gp <- oPieplot(df, columns = c("dGene", "pGene", "fGene", "nGene", "eGene", "cGene"), legend.title = "Seeds")
+gp <- oPieplot(df, columns=c('dGene','pGene','fGene','nGene','eGene','cGene'), legend.title='Seeds')
 }
 }
 \seealso{

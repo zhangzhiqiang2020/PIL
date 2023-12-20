@@ -22,360 +22,363 @@
 #' @examples
 #' # 1) generate a random graph according to the ER model
 #' set.seed(123)
-#' g <- erdos.renyi.game(10, 1 / 10)
+#' g <- erdos.renyi.game(10, 1/10)
 #'
 #' \dontrun{
 #' # 2) produce the induced subgraph only based on the nodes in query
-#' subg <- oNetInduce(g, V(g), knn = 0)
+#' subg <- oNetInduce(g, V(g), knn=0)
 #' V(subg)$name <- 1:vcount(subg)
 #'
 #' # 3) obtain the pre-computated affinity matrix
-#' PTmatrix <- oRWR(g = subg, normalise = "laplacian", restart = 0.75, parallel = FALSE)
+#' PTmatrix <- oRWR(g=subg, normalise="laplacian", restart=0.75, parallel=FALSE)
 #' # visualise affinity matrix
-#' visHeatmapAdv(as.matrix(PTmatrix), Rowv = FALSE, Colv = FALSE, colormap = "wyr", KeyValueName = "Affinity")
-#'
+#' visHeatmapAdv(as.matrix(PTmatrix), Rowv=FALSE, Colv=FALSE, colormap="wyr", KeyValueName="Affinity")
+#' 
 #' # 4) obtain affinity matrix given sets of seeds
 #' # define sets of seeds
 #' # each seed with equal weight (i.e. all non-zero entries are '1')
-#' aSeeds <- c(1, 0, 1, 0, 1)
-#' bSeeds <- c(0, 0, 1, 0, 1)
-#' setSeeds <- data.frame(aSeeds, bSeeds)
+#' aSeeds <- c(1,0,1,0,1)
+#' bSeeds <- c(0,0,1,0,1)
+#' setSeeds <- data.frame(aSeeds,bSeeds)
 #' rownames(setSeeds) <- 1:5
 #' # calcualte affinity matrix
-#' PTmatrix <- oRWR(g = subg, normalise = "laplacian", setSeeds = setSeeds, restart = 0.75, parallel = FALSE)
+#' PTmatrix <- oRWR(g=subg, normalise="laplacian", setSeeds=setSeeds, restart=0.75, parallel=FALSE)
 #' PTmatrix
 #' }
-oRWR <- function(g, normalise = c("laplacian", "row", "column", "none"), setSeeds = NULL, restart = 0.75, normalise.affinity.matrix = c("none", "quantile"), parallel = TRUE, multicores = NULL, verbose = TRUE) {
-  startT <- Sys.time()
-  if (verbose) {
-    message(paste(c("Start at ", as.character(startT)), collapse = ""), appendLF = TRUE)
-    message("", appendLF = TRUE)
-  }
-  ####################################################################################
 
-  normalise <- match.arg(normalise)
-  normalise.affinity.matrix <- match.arg(normalise.affinity.matrix)
-
-  if (is(g, "graphNEL")) {
-    ig <- igraph.from.graphNEL(g)
-  } else {
-    ig <- g
-  }
-  if (!is(ig, "igraph")) {
-    stop("The function must apply to either 'igraph' or 'graphNEL' object.\n")
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("First, get the adjacency matrix of the input graph (%s) ...", as.character(now)), appendLF = TRUE)
-  }
-
-  if ("weight" %in% list.edge.attributes(ig)) {
-    adjM <- get.adjacency(ig, type = "both", attr = "weight", edges = FALSE, names = TRUE, sparse = getIgraphOpt("sparsematrices"))
-    if (verbose) {
-      message(sprintf("\tNotes: using weighted graph!"), appendLF = TRUE)
+oRWR <- function(g, normalise=c("laplacian","row","column","none"), setSeeds=NULL, restart=0.75, normalise.affinity.matrix=c("none","quantile"), parallel=TRUE, multicores=NULL, verbose=TRUE)
+{
+    
+    startT <- Sys.time()
+    if(verbose){
+        message(paste(c("Start at ",as.character(startT)), collapse=""), appendLF=TRUE)
+        message("", appendLF=TRUE)
     }
-  } else {
-    adjM <- get.adjacency(ig, type = "both", attr = NULL, edges = FALSE, names = TRUE, sparse = getIgraphOpt("sparsematrices"))
-    if (verbose) {
-      message(sprintf("\tNotes: using unweighted graph!"), appendLF = TRUE)
+    ####################################################################################
+    
+    normalise <- match.arg(normalise)
+    normalise.affinity.matrix <- match.arg(normalise.affinity.matrix)
+    
+    if(is(g,"graphNEL")){
+        ig <- igraph.from.graphNEL(g)
+    }else{
+        ig <- g
     }
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("Then, normalise the adjacency matrix using %s normalisation (%s) ...", normalise, as.character(now)), appendLF = TRUE)
-  }
-
-  A <- adjM != 0
-  ## library(Matrix)
-  ## vignette("Intro2Matrix")
-  if (normalise == "row") {
-    # D <- diag(apply(A,1,sum)^(-1))
-    D <- Matrix::Diagonal(x = (Matrix::rowSums(A))^(-1))
-    nadjM <- adjM %*% D
-  } else if (normalise == "column") {
-    # D <- diag(apply(A,1,sum)^(-1))
-    D <- Matrix::Diagonal(x = (Matrix::colSums(A))^(-1))
-    nadjM <- D %*% adjM
-  } else if (normalise == "laplacian") {
-    # D <- diag(apply(A,1,sum)^(-0.5))
-    D <- Matrix::Diagonal(x = (Matrix::colSums(A))^(-0.5))
-    nadjM <- D %*% adjM %*% D
-  } else {
-    nadjM <- adjM
-  }
-  # nadjM <- as.matrix(nadjM)
-
-  # nig <- graph.adjacency(nadjM, mode=c("undirected"), weighted=TRUE, diag=FALSE, add.colnames=NULL, add.rownames=NA)
-  ## update the vertex attributes
-  nattr <- list.vertex.attributes(ig)
-  for (attr in nattr) {
-    # nig <- set.vertex.attribute(nig, name=attr, index=V(nig), get.vertex.attribute(ig,attr))
-  }
-  ## update the edge attributes
-  eattr <- list.edge.attributes(ig)
-  for (attr in eattr) {
-    if (!("weight" %in% attr)) {
-      # nig <- set.edge.attribute(nig, name=attr, index=E(nig), get.edge.attribute(ig,attr))
+    if (!is(ig,"igraph")){
+        stop("The function must apply to either 'igraph' or 'graphNEL' object.\n")
     }
-  }
 
-
-  ####################################################
-  # A function to indicate the running progress
-  progress_indicate <- function(i, B, step, flag = FALSE) {
-    if (i %% ceiling(B / step) == 0 | i == B | i == 1) {
-      if (flag & verbose) {
-        message(sprintf("\t%d out of %d seed sets (%s)", i, B, as.character(Sys.time())), appendLF = TRUE)
-      }
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("First, get the adjacency matrix of the input graph (%s) ...", as.character(now)), appendLF=TRUE)
     }
-  }
-
-  ## A function to make sure the sum of elements in each steady probability vector is one
-  sum2one <- function(PTmatrix) {
-    col_sum <- apply(PTmatrix, 2, sum)
-    # col_sum <- Matrix::colSums(PTmatrix, sparseResult=F)
-    col_sum_matrix <- matrix(rep(col_sum, nrow(PTmatrix)), ncol = ncol(PTmatrix), nrow = nrow(PTmatrix), byrow = TRUE)
-    res <- as.matrix(PTmatrix) / col_sum_matrix
-    res[is.na(res)] <- 0
-    return(res)
-  }
-
-  ## a function to normalize columns of a matrix to have the same Quantiles
-  normalizeQuantiles <- function(A, ties = TRUE) {
-    n <- dim(A)
-    if (is.null(n)) {
-      return(A)
-    }
-    if (n[2] == 1) {
-      return(A)
-    }
-    O <- S <- array(, n)
-    nobs <- rep(n[1], n[2])
-    i <- (0:(n[1] - 1)) / (n[1] - 1)
-    for (j in 1:n[2]) {
-      Si <- sort(A[, j], method = "quick", index.return = TRUE)
-      nobsj <- length(Si$x)
-      if (nobsj < n[1]) {
-        nobs[j] <- nobsj
-        isna <- is.na(A[, j])
-        S[, j] <- stats::approx((0:(nobsj - 1)) / (nobsj - 1), Si$x,
-          i,
-          ties = "ordered"
-        )$y
-        O[!isna, j] <- ((1:n[1])[!isna])[Si$ix]
-      } else {
-        S[, j] <- Si$x
-        O[, j] <- Si$ix
-      }
-    }
-    m <- rowMeans(S)
-    for (j in 1:n[2]) {
-      if (ties) r <- rank(A[, j])
-      if (nobs[j] < n[1]) {
-        isna <- is.na(A[, j])
-        if (ties) {
-          A[!isna, j] <- stats::approx(i, m, (r[!isna] - 1) / (nobs[j] - 1), ties = "ordered")$y
-        } else {
-          A[O[!isna, j], j] <- stats::approx(i, m, (0:(nobs[j] - 1)) / (nobs[j] - 1), ties = "ordered")$y
+    
+    if ("weight" %in% list.edge.attributes(ig)){
+        adjM <- get.adjacency(ig, type="both", attr="weight", edges=FALSE, names=TRUE, sparse=getIgraphOpt("sparsematrices"))
+        if(verbose){
+            message(sprintf("\tNotes: using weighted graph!"), appendLF=TRUE)
         }
-      } else {
-        if (ties) {
-          A[, j] <- stats::approx(i, m, (r - 1) / (n[1] - 1), ties = "ordered")$y
-        } else {
-          A[O[, j], j] <- m
+    }else{
+        adjM <- get.adjacency(ig, type="both", attr=NULL, edges=FALSE, names=TRUE, sparse=getIgraphOpt("sparsematrices"))
+        if(verbose){
+            message(sprintf("\tNotes: using unweighted graph!"), appendLF=TRUE)
         }
-      }
     }
-
-    return(A)
-  }
-
-  ####################################################
-
-  ################## RWR
-  ## restarting prob
-  if (is.null(restart) || is.na(restart) || restart < 0 || restart > 100) {
-    r <- 0.75
-  } else if (restart > 1 && restart < 100) {
-    r <- restart / 100
-  } else {
-    r <- restart
-  }
-  ## stopping critera
-  stop_delta <- 1e-6 # L1 norm of successive estimates 'PT' below the threshold 'stop_delta'
-  stop_step <- 50 # maximum steps of iterations
-
-  if (is.null(setSeeds)) {
-    P0matrix <- Matrix::Matrix(diag(vcount(ig)), sparse = TRUE)
-    rownames(P0matrix) <- V(ig)$name
-    colnames(P0matrix) <- V(ig)$name
-  } else {
-    ## check input data
-    if (is.matrix(setSeeds) | is.data.frame(setSeeds)) {
-      data <- as.matrix(setSeeds)
-    } else if (is.vector(setSeeds)) {
-      data <- as.matrix(setSeeds, ncol = 1)
+    
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("Then, normalise the adjacency matrix using %s normalisation (%s) ...", normalise, as.character(now)), appendLF=TRUE)
     }
-
-    if (is.null(rownames(data))) {
-      stop("The function must require the row names of the input setSeeds.\n")
-    } else if (any(is.na(rownames(data)))) {
-      warning("setSeeds with NA as row names will be removed")
-      data <- data[!is.na(rownames(data)), ]
+    
+    A <- adjM!=0
+    ## library(Matrix) 
+    ## vignette("Intro2Matrix")
+    if(normalise == "row"){
+        #D <- diag(apply(A,1,sum)^(-1))
+        D <- Matrix::Diagonal(x=(Matrix::rowSums(A))^(-1))
+        nadjM <- adjM %*% D
+    }else if(normalise == "column"){
+        #D <- diag(apply(A,1,sum)^(-1))
+        D <- Matrix::Diagonal(x=(Matrix::colSums(A))^(-1))
+        nadjM <- D %*% adjM
+    }else if(normalise == "laplacian"){
+        #D <- diag(apply(A,1,sum)^(-0.5))
+        D <- Matrix::Diagonal(x=(Matrix::colSums(A))^(-0.5))
+        nadjM <- D %*% adjM %*% D
+    }else{
+        nadjM <- adjM
     }
-    cnames <- colnames(data)
-    if (is.null(cnames)) {
-      cnames <- seq(1, ncol(data))
+    #nadjM <- as.matrix(nadjM)
+    
+    #nig <- graph.adjacency(nadjM, mode=c("undirected"), weighted=TRUE, diag=FALSE, add.colnames=NULL, add.rownames=NA)
+    ## update the vertex attributes
+    nattr <- list.vertex.attributes(ig)
+    for(attr in nattr){
+        #nig <- set.vertex.attribute(nig, name=attr, index=V(nig), get.vertex.attribute(ig,attr))
     }
-
-    ## check mapping between input data and graph
-    ind <- match(rownames(data), V(ig)$name)
-    nodes_mapped <- V(ig)$name[ind[!is.na(ind)]]
-    if (length(nodes_mapped) != vcount(ig)) {
-      warning("The row names of input setSeeds do not contain all those in the input graph.\n")
-    }
-    P0matrix <- matrix(0, nrow = nrow(nadjM), ncol = ncol(data))
-    P0matrix[ind[!is.na(ind)], ] <- as.matrix(data[!is.na(ind), ])
-
-    ## make sure the sum of elements in each steady probability vector is one
-    P0matrix <- sum2one(P0matrix)
-
-    if (0) {
-      ## make sure the sum of elements in each starting probability vector is one
-      P0matrix <- sapply(1:ncol(P0matrix), function(i) {
-        if (sum(P0matrix[, i] != 0)) {
-          P0matrix[, i] / sum(P0matrix[, i])
-        } else {
-          P0matrix[, i]
+    ## update the edge attributes    
+    eattr <- list.edge.attributes(ig)
+    for(attr in eattr){
+        if (!("weight" %in% attr)){
+            #nig <- set.edge.attribute(nig, name=attr, index=E(nig), get.edge.attribute(ig,attr))
         }
-      })
-      rownames(P0matrix) <- V(ig)$name
-      colnames(P0matrix) <- cnames
     }
+    
+    
+    ####################################################
+    # A function to indicate the running progress
+    progress_indicate <- function(i, B, step, flag=FALSE){
+        if(i %% ceiling(B/step) == 0 | i==B | i==1){
+            if(flag & verbose){
+                message(sprintf("\t%d out of %d seed sets (%s)", i, B, as.character(Sys.time())), appendLF=TRUE)
+            }
+        }
+    }
+    
+    ## A function to make sure the sum of elements in each steady probability vector is one
+    sum2one <- function(PTmatrix){
+        col_sum <- apply(PTmatrix, 2, sum)
+        #col_sum <- Matrix::colSums(PTmatrix, sparseResult=F)
+        col_sum_matrix <- matrix(rep(col_sum, nrow(PTmatrix)), ncol=ncol(PTmatrix), nrow=nrow(PTmatrix), byrow=TRUE)
+        res <- as.matrix(PTmatrix)/col_sum_matrix
+        res[is.na(res)] <- 0
+        return(res)
+    }
+    
+    ## a function to normalize columns of a matrix to have the same Quantiles
+    normalizeQuantiles <- function (A, ties=TRUE) {
+        n <- dim(A)
+        if(is.null(n)) return(A)
+        if(n[2] == 1) return(A)
+        O <- S <- array(, n)
+        nobs <- rep(n[1], n[2])
+        i <- (0:(n[1] - 1))/(n[1] - 1)
+        for(j in 1:n[2]){
+            Si <- sort(A[, j], method = "quick", index.return = TRUE)
+            nobsj <- length(Si$x)
+            if (nobsj < n[1]){
+                nobs[j] <- nobsj
+                isna <- is.na(A[, j])
+                S[, j] <- stats::approx((0:(nobsj - 1))/(nobsj - 1), Si$x, 
+                    i, ties = "ordered")$y
+                O[!isna, j] <- ((1:n[1])[!isna])[Si$ix]
+            }else{
+                S[, j] <- Si$x
+                O[, j] <- Si$ix
+            }
+        }
+        m <- rowMeans(S)
+        for (j in 1:n[2]){
+            if(ties) r<-rank(A[, j])
+            if(nobs[j] < n[1]){
+                isna <- is.na(A[, j])
+                if(ties){ 
+                    A[!isna, j] <- stats::approx(i, m, (r[!isna] - 1)/(nobs[j] - 1), ties = "ordered")$y
+                }else{ 
+                    A[O[!isna, j], j] <- stats::approx(i, m, (0:(nobs[j] - 1))/(nobs[j] - 1), ties = "ordered")$y
+                }
+            }else{
+                if(ties){
+                    A[, j] <- stats::approx(i, m, (r - 1)/(n[1] - 1), ties = "ordered")$y
+                }else{
+                    A[O[, j], j] <- m
+                }
+            }
+        }
+    
+        return(A)
+    }
+    
+    ####################################################
+    
+    ################## RWR
+    ## restarting prob
+    if(is.null(restart) || is.na(restart) || restart<0 || restart>100){
+        r <- 0.75
+    }else if(restart>1 && restart<100){
+        r <- restart/100
+    }else{
+        r <- restart
+    }
+    ## stopping critera
+    stop_delta <- 1e-6   # L1 norm of successive estimates 'PT' below the threshold 'stop_delta'
+    stop_step <- 50      # maximum steps of iterations
+    
+    if(is.null(setSeeds)){
+        P0matrix <- Matrix::Matrix(diag(vcount(ig)), sparse=TRUE)
+        rownames(P0matrix) <- V(ig)$name
+        colnames(P0matrix) <- V(ig)$name
+        
+    }else{
+        ## check input data
+        if(is.matrix(setSeeds) | is.data.frame(setSeeds)){
+            data <- as.matrix(setSeeds)
+        }else if(is.vector(setSeeds)){
+            data <- as.matrix(setSeeds, ncol=1)
+        }
 
-    ## convert to sparse matrix
-    P0matrix <- Matrix::Matrix(P0matrix, sparse = TRUE)
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("Third, RWR of %d sets of seeds using %1.1e restart probability (%s) ...", ncol(P0matrix), restart, as.character(now)), appendLF = TRUE)
-  }
-
-  if (restart == 1) {
-    ## just seeds themselves
-    PTmatrix <- P0matrix
-  } else {
-    ###### parallel computing
-    flag_parallel <- FALSE
-    if (parallel == TRUE) {
-      flag_parallel <- oCheckParallel(multicores = multicores, verbose = verbose)
-      if (flag_parallel) {
-        j <- 1
-        PTmatrix <- foreach::`%dopar%`(foreach::foreach(j = 1:ncol(P0matrix), .inorder = TRUE, .combine = "cbind"), {
-          progress_indicate(j, ncol(P0matrix), 10, flag = TRUE)
-          P0 <- P0matrix[, j]
-          ## Initializing variables
-          step <- 0
-          delta <- 1
-          PT <- P0
-          ## Iterative update till convergence (delta<=1e-10)
-          while (delta > stop_delta && step <= stop_step) {
-            PX <- (1 - r) * nadjM %*% PT + r * P0
-            # p-norm of v: sum((abs(v).p)^(1/p))
-            delta <- sum(abs(PX - PT))
-            PT <- PX
-            step <- step + 1
-          }
-          as.matrix(PT)
+        if(is.null(rownames(data))) {
+            stop("The function must require the row names of the input setSeeds.\n")
+        }else if(any(is.na(rownames(data)))){
+            warning("setSeeds with NA as row names will be removed")
+            data <- data[!is.na(rownames(data)),]
+        }
+        cnames <- colnames(data)
+        if(is.null(cnames)){
+            cnames <- seq(1,ncol(data))
+        }
+    
+        ## check mapping between input data and graph
+        ind <- match(rownames(data), V(ig)$name)
+        nodes_mapped <- V(ig)$name[ind[!is.na(ind)]]
+        if(length(nodes_mapped)!=vcount(ig)){
+            warning("The row names of input setSeeds do not contain all those in the input graph.\n")
+        }
+        P0matrix <- matrix(0,nrow=nrow(nadjM),ncol=ncol(data))
+        P0matrix[ind[!is.na(ind)],] <- as.matrix(data[!is.na(ind),])
+        
+        ## make sure the sum of elements in each steady probability vector is one
+        P0matrix <- sum2one(P0matrix)
+        
+        if(0){
+        ## make sure the sum of elements in each starting probability vector is one
+        P0matrix <- sapply(1:ncol(P0matrix), function(i){
+            if(sum(P0matrix[,i]!=0)){
+                P0matrix[,i]/sum(P0matrix[,i])
+            }else{
+                P0matrix[,i]
+            }
         })
-
-        # PTmatrix[PTmatrix<1e-6] <- 0
-        # PTmatrix <- Matrix::Matrix(PTmatrix, sparse=TRUE)
-      }
-    }
-
-    ###### non-parallel computing
-    if (flag_parallel == FALSE) {
-      PTmatrix <- Matrix::Matrix(0, nrow = nrow(P0matrix), ncol = ncol(P0matrix), sparse = TRUE)
-      for (j in 1:ncol(P0matrix)) {
-        # P0 <- as.matrix(P0matrix[,j],ncol=1)
-        P0 <- P0matrix[, j]
-
-        ## Initializing variables
-        step <- 0
-        delta <- 1
-
-        PT <- P0
-        ## Iterative update till convergence (delta<=1e-10)
-        while (delta > stop_delta && step <= stop_step) {
-          PX <- (1 - r) * nadjM %*% PT + r * P0
-
-          # p-norm of v: sum((abs(v).p)^(1/p))
-          delta <- sum(abs(PX - PT))
-
-          PT <- PX
-          step <- step + 1
+        rownames(P0matrix) <- V(ig)$name
+        colnames(P0matrix) <- cnames
         }
-        # PTmatrix[,j] <- as.matrix(PT, ncol=1)
-        # PT[PT<1e-6] <- 0
-        # PTmatrix[,j] <- Matrix::Matrix(PT, sparse=TRUE)
-        PTmatrix[, j] <- PT
-
-        progress_indicate(j, ncol(P0matrix), 10, flag = TRUE)
-      }
+        
+        ## convert to sparse matrix
+        P0matrix <- Matrix::Matrix(P0matrix, sparse=TRUE)
     }
-  }
+    
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("Third, RWR of %d sets of seeds using %1.1e restart probability (%s) ...", ncol(P0matrix), restart, as.character(now)), appendLF=TRUE)
+    }
+    
+    if(restart==1){
+        ## just seeds themselves
+        PTmatrix <- P0matrix
+    }else{
+        
+        ###### parallel computing
+        flag_parallel <- FALSE
+        if(parallel==TRUE){
 
-  ## make sure the sum of elements in each steady probability vector is one
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("Fourth, rescale steady probability vector (%s) ...", as.character(now)), appendLF = TRUE)
-  }
-  PTmatrix <- sum2one(PTmatrix) # input/output: full matrix
-
-  if (0) {
+            flag_parallel <- oCheckParallel(multicores=multicores, verbose=verbose)
+            if(flag_parallel){
+                j <- 1
+                PTmatrix <- foreach::`%dopar%` (foreach::foreach(j=1:ncol(P0matrix), .inorder=TRUE, .combine='cbind'), {
+                    progress_indicate(j, ncol(P0matrix), 10, flag=TRUE)
+                    P0 <- P0matrix[,j]
+                    ## Initializing variables
+                    step <- 0
+                    delta <- 1
+                    PT <- P0
+                    ## Iterative update till convergence (delta<=1e-10)
+                    while (delta>stop_delta && step<=stop_step){
+                        PX <- (1-r) * nadjM %*% PT + r * P0
+                        # p-norm of v: sum((abs(v).p)^(1/p))
+                        delta <- sum(abs(PX-PT))
+                        PT <- PX
+                        step <- step+1
+                    }
+                    as.matrix(PT)
+                })
+                    
+                #PTmatrix[PTmatrix<1e-6] <- 0
+                #PTmatrix <- Matrix::Matrix(PTmatrix, sparse=TRUE)
+            }
+        }
+        
+        ###### non-parallel computing
+        if(flag_parallel==FALSE){
+            PTmatrix <- Matrix::Matrix(0, nrow=nrow(P0matrix), ncol=ncol(P0matrix), sparse=TRUE)
+            for(j in 1:ncol(P0matrix)){
+                #P0 <- as.matrix(P0matrix[,j],ncol=1)
+                P0 <- P0matrix[,j]
+        
+                ## Initializing variables
+                step <- 0
+                delta <- 1
+        
+                PT <- P0
+                ## Iterative update till convergence (delta<=1e-10)
+                while (delta>stop_delta && step<=stop_step){
+                    PX <- (1-r) * nadjM %*% PT + r * P0
+    
+                    # p-norm of v: sum((abs(v).p)^(1/p))
+                    delta <- sum(abs(PX-PT))
+    
+                    PT <- PX
+                    step <- step+1
+                }
+                #PTmatrix[,j] <- as.matrix(PT, ncol=1)
+                #PT[PT<1e-6] <- 0
+                #PTmatrix[,j] <- Matrix::Matrix(PT, sparse=TRUE)
+                PTmatrix[,j] <- PT
+            
+                progress_indicate(j, ncol(P0matrix), 10, flag=TRUE)
+        
+            }
+        }
+    }
+    
     ## make sure the sum of elements in each steady probability vector is one
-    PTmatrix <- sapply(1:ncol(PTmatrix), function(i) {
-      if (sum(PTmatrix[, i]) != 0) {
-        PTmatrix[, i] / sum(PTmatrix[, i])
-      } else {
-        PTmatrix[, i]
-      }
-    })
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("Fourth, rescale steady probability vector (%s) ...", as.character(now)), appendLF=TRUE)
+    }
+    PTmatrix <- sum2one(PTmatrix) # input/output: full matrix
+    
+    if(0){
+        ## make sure the sum of elements in each steady probability vector is one
+        PTmatrix <- sapply(1:ncol(PTmatrix), function(i){
+            if(sum(PTmatrix[,i])!=0){
+                PTmatrix[,i]/sum(PTmatrix[,i])
+            }else{
+                PTmatrix[,i]
+            }
+        })
+        rownames(PTmatrix) <- rownames(P0matrix)
+        colnames(PTmatrix) <- colnames(P0matrix)
+    }
+    
+    ####################################################################################
+    if(ncol(PTmatrix) == 1){
+        normalise.affinity.matrix <- "none"
+    }
+    if(normalise.affinity.matrix=="quantile"){
+        PTmatrix <- normalizeQuantiles(PTmatrix)
+    }
+    
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("Finally, output %d by %d affinity matrix normalised by %s (%s) ...", nrow(PTmatrix), ncol(PTmatrix), normalise.affinity.matrix, as.character(now)), appendLF=TRUE)
+    }
+    
+    #PTmatrix[PTmatrix<1e-6] <- 0
+    #PTmatrix <- signif(PTmatrix, digits=7)
+    PTmatrix <- Matrix::Matrix(PTmatrix, sparse=TRUE)
     rownames(PTmatrix) <- rownames(P0matrix)
     colnames(PTmatrix) <- colnames(P0matrix)
-  }
+    
+    ####################################################################################
+    endT <- Sys.time()
+    if(verbose){
+        message(paste(c("\nFinish at ",as.character(endT)), collapse=""), appendLF=TRUE)
+    }
+    
+    runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units="secs"))
+    message(paste(c("Runtime in total is: ",runTime," secs\n"), collapse=""), appendLF=TRUE)
 
-  ####################################################################################
-  if (ncol(PTmatrix) == 1) {
-    normalise.affinity.matrix <- "none"
-  }
-  if (normalise.affinity.matrix == "quantile") {
-    PTmatrix <- normalizeQuantiles(PTmatrix)
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("Finally, output %d by %d affinity matrix normalised by %s (%s) ...", nrow(PTmatrix), ncol(PTmatrix), normalise.affinity.matrix, as.character(now)), appendLF = TRUE)
-  }
-
-  # PTmatrix[PTmatrix<1e-6] <- 0
-  # PTmatrix <- signif(PTmatrix, digits=7)
-  PTmatrix <- Matrix::Matrix(PTmatrix, sparse = TRUE)
-  rownames(PTmatrix) <- rownames(P0matrix)
-  colnames(PTmatrix) <- colnames(P0matrix)
-
-  ####################################################################################
-  endT <- Sys.time()
-  if (verbose) {
-    message(paste(c("\nFinish at ", as.character(endT)), collapse = ""), appendLF = TRUE)
-  }
-
-  runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units = "secs"))
-  message(paste(c("Runtime in total is: ", runTime, " secs\n"), collapse = ""), appendLF = TRUE)
-
-  invisible(PTmatrix)
+    invisible(PTmatrix)
 }
+
+

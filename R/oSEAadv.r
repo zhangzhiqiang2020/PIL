@@ -19,7 +19,7 @@
 #' @param true.path.rule logical to indicate whether the true-path rule should be applied to propagate annotations. By default, it sets to false
 #' @param verbose logical to indicate whether the messages will be displayed in the screen. By default, it sets to false for no display
 #' @param silent logical to indicate whether the messages will be silent completely. By default, it sets to false. If true, verbose will be forced to be false
-#' @return
+#' @return 
 #' an object of class "eSAD", a tibble with 5 columns; they are "group" (the input group names), "onto" (input ontologies), "info" [a list-column each containing 14 columns including including "id" (set ID), "name" (set name), "nA" (number of annotations), "nO" (number of overlaps), "fc" (fold change), "zscore" (z-score), "pvalue" (p-value), "adjp" (adjusted p-value), "or" (odds ratio), "CIl" (lower bound confidence interval for the odds ratio), "CIu" (upper bound confidence interval for the odds ratio), "distance" (distance to the root), "namespace", "overlap" (the detailed members for overlaps)], "data" (a list-column each containing 1 column), and "background" (a list-column each containing 1 column).
 #' @note none
 #' @export
@@ -27,119 +27,109 @@
 #' @include oSEAadv.r
 #' @examples
 #' \dontrun{
-#' sets <- tibble(onto = c("GOMF", "GOBP", "KEGG", "Bucket", "PSG")[c(1)]) %>% mutate(set = map(onto, ~ oRDS(str_c("org.Hs.eg", .x), placeholder = placeholder)))
-#'
-#' BioGRID_HCoV <- oRDS("BioGRID_HCoV", placeholder = placeholder)
-#' list_vec <- BioGRID_HCoV %>%
-#'   nest(data = -from_tax) %>%
-#'   mutate(gene = map(data, ~ pull(.x, to))) %>%
-#'   select(-data) %>%
-#'   deframe()
-#'
+#' sets <- tibble(onto=c('GOMF','GOBP','KEGG','Bucket','PSG')[c(1)]) %>% mutate(set=map(onto,~oRDS(str_c("org.Hs.eg",.x),placeholder=placeholder)))
+#' 
+#' BioGRID_HCoV <- oRDS("BioGRID_HCoV", placeholder=placeholder)
+#' list_vec <- BioGRID_HCoV %>% nest(data=-from_tax) %>% mutate(gene=map(data,~pull(.x,to))) %>% select(-data) %>% deframe()
+#' 
 #' # basic analysis
 #' esad <- oSEAadv(list_vec, sets)
-#' esad %>%
-#'   oSEAextract() %>%
-#'   write_delim("results_esad.txt", "\t")
-#' gp <- oSEAballoon(esad, top = 10, adjp.cutoff = 0.05, zlim = c(0, 10), slim = NULL)
-#' gp + theme(axis.text.y = element_text(size = 6), axis.text.x = element_text(size = 6), strip.text.y = element_text(size = 6, angle = 0))
+#' esad %>% oSEAextract() %>% write_delim('results_esad.txt','\t')
+#' gp <- oSEAballoon(esad, top=10, adjp.cutoff=0.05, zlim=c(0,10), slim=NULL)
+#' gp + theme(axis.text.y=element_text(size=6),axis.text.x=element_text(size=6),strip.text.y=element_text(size=6,angle=0))
 #'
 #' # advanced analysis
-#' ig <- oRDS("ig.GOMF", placeholder = placeholder)
+#' ig <- oRDS("ig.GOMF", placeholder=placeholder)
 #' V(ig)$name <- V(ig)$term_name
 #' # advanced visual
-#' gp <- oSEAggraph(esad, ig, fixed = F, leave = F, layout = "dendrogram", node.label.size = 0)
-#' gp$gp_template + ggraph::geom_node_text(aes(filter = leaf, label = name, angle = node_angle(x, y)), repel = F, hjust = 0, size = 1.5) + ggraph::geom_node_text(aes(filter = !leaf, label = name), repel = T, size = 1.5, color = "red", alpha = 0.5, check_overlap = T) + expand_limits(x = c(-2, 2), y = c(-2, 2)) -> gp_template
-#' gp + geom_edge_diagonal2(aes(color = node.term_namespace, alpha = stat(index)), width = 0.2) + scale_edge_alpha("direction", guide = "edge_direction") + theme(legend.box = "vertical") -> gp1
-#' gp1 + guides(edge_alpha = F, edge_colour = guide_legend("namespace", direction = "vertical"), size = guide_legend("-log10(FDR)", "top", direction = "horizontal", ncol = 3), color = guide_colorbar("Z-score", "top", direction = "horizontal", barheight = 0.5)) + theme(legend.position = "right")
+#' gp <- oSEAggraph(esad, ig, fixed=F, leave=F, layout='dendrogram', node.label.size=0)
+#' gp$gp_template + ggraph::geom_node_text(aes(filter=leaf,label=name,angle=node_angle(x,y)), repel=F,hjust=0,size=1.5) + ggraph::geom_node_text(aes(filter=!leaf,label=name), repel=T,size=1.5,color='red',alpha=0.5,check_overlap=T)+ expand_limits(x=c(-2,2), y=c(-2,2)) -> gp_template
+#' gp + geom_edge_diagonal2(aes(color=node.term_namespace, alpha=stat(index)),width=0.2) + scale_edge_alpha('direction', guide='edge_direction') + theme(legend.box='vertical') -> gp1
+#' gp1 + guides(edge_alpha=F, edge_colour=guide_legend('namespace',direction="vertical"), size=guide_legend('-log10(FDR)','top',direction="horizontal",ncol=3), color=guide_colorbar('Z-score','top',direction="horizontal",barheight=0.5)) + theme(legend.position='right')
 #' }
-oSEAadv <- function(list_vec, sets, background = NULL, size.range = c(10, 2000), min.overlap = 5, which.distance = NULL, test = c("fisher", "hypergeo", "binomial"), background.annotatable.only = NULL, p.tail = c("one-tail", "two-tails"), p.adjust.method = c("BH", "BY", "bonferroni", "holm", "hochberg", "hommel"), ontology.algorithm = c("none", "pc", "elim", "lea"), elim.pvalue = 1e-2, lea.depth = 2, path.mode = c("all_paths", "shortest_paths", "all_shortest_paths"), true.path.rule = FALSE, verbose = TRUE, silent = FALSE) {
-  startT <- Sys.time()
-  if (!silent) {
-    message(paste(c("Start at ", as.character(startT)), collapse = ""), appendLF = TRUE)
-    message("", appendLF = TRUE)
-  } else {
-    verbose <- FALSE
-  }
-  ####################################################################################
 
-  ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
-  test <- match.arg(test)
-  p.tail <- match.arg(p.tail)
-  p.adjust.method <- match.arg(p.adjust.method)
-  ontology.algorithm <- match.arg(ontology.algorithm)
-  path.mode <- match.arg(path.mode)
-  p.tail <- match.arg(p.tail)
-
-  ################################################
-  ## support enrichment analysis for modular genes from the cModule object
-  if (is(list_vec, "cModule")) {
-    list_vec <- split(x = list_vec$mem$nodes, f = list_vec$mem$modules)
-  }
-  ################################################
-
-  ############
-  if (length(list_vec) == 0) {
-    return(NULL)
-  }
-  ############
-  if (is.vector(list_vec) & !is(list_vec, "list")) {
-    list_vec <- list(list_vec)
-  } else if (is(list_vec, "list")) {
-    ## Remove null elements in a list
-    list_vec <- base::Filter(base::Negate(is.null), list_vec)
-    if (length(list_vec) == 0) {
-      return(NULL)
+oSEAadv <- function(list_vec, sets, background=NULL, size.range=c(10,2000), min.overlap=5, which.distance=NULL, test=c("fisher","hypergeo","binomial"), background.annotatable.only=NULL, p.tail=c("one-tail","two-tails"), p.adjust.method=c("BH", "BY", "bonferroni", "holm", "hochberg", "hommel"), ontology.algorithm=c("none","pc","elim","lea"), elim.pvalue=1e-2, lea.depth=2, path.mode=c("all_paths","shortest_paths","all_shortest_paths"), true.path.rule=FALSE, verbose=TRUE, silent=FALSE)
+{
+    startT <- Sys.time()
+    if(!silent){
+    	message(paste(c("Start at ",as.character(startT)), collapse=""), appendLF=TRUE)
+    	message("", appendLF=TRUE)
+    }else{
+    	verbose <- FALSE
     }
-  } else {
-    stop("The input data must be a vector or a list of vectors.\n")
-  }
-
-  list_names <- names(list_vec)
-  if (is.null(list_names)) {
-    list_names <- paste0("G", 1:length(list_vec))
-    names(list_vec) <- list_names
-  }
-
-  onto <- info <- NULL
-
-  pb <- dplyr::progress_estimated(length(list_vec))
-  ls_df <- lapply(seq_len(length(list_vec)), function(i) {
-    if (verbose) {
-      message(sprintf("\nAnalysing group %d ('%s') (%s) ...", i, names(list_vec)[i], as.character(Sys.time())), appendLF = T)
+    ####################################################################################
+    
+    ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
+    test <- match.arg(test)
+    p.tail <- match.arg(p.tail)
+    p.adjust.method <- match.arg(p.adjust.method)
+    ontology.algorithm <- match.arg(ontology.algorithm)
+    path.mode <- match.arg(path.mode)
+    p.tail <- match.arg(p.tail)
+    
+    ################################################
+    ## support enrichment analysis for modular genes from the cModule object
+    if(is(list_vec,'cModule')){
+    	list_vec <- split(x=list_vec$mem$nodes, f=list_vec$mem$modules)
     }
+    ################################################
+    
+    ############
+    if(length(list_vec)==0){
+    	return(NULL)
+    }
+    ############
+    if(is.vector(list_vec) & !is(list_vec,"list")){
+    	list_vec <- list(list_vec)
+	}else if(is(list_vec,"list")){
+		## Remove null elements in a list
+		list_vec <- base::Filter(base::Negate(is.null), list_vec)
+		if(length(list_vec)==0){
+			return(NULL)
+		}
+    }else{
+        stop("The input data must be a vector or a list of vectors.\n")
+    }
+    
+	list_names <- names(list_vec)
+	if(is.null(list_names)){
+		list_names <- paste0('G', 1:length(list_vec))
+		names(list_vec) <- list_names
+	}
+    
+    onto <- info <- NULL
+    
+    pb <- dplyr::progress_estimated(length(list_vec))
+    ls_df <- lapply(seq_len(length(list_vec)), function(i){
+		if(verbose){
+			message(sprintf("\nAnalysing group %d ('%s') (%s) ...", i, names(list_vec)[i], as.character(Sys.time())), appendLF=T)
+		}
+		
+		eset <- set <- data <- NULL
 
-    eset <- set <- data <- NULL
-
-    sets %>%
-      dplyr::mutate(eset = purrr::map2(onto, set, function(x, y) {
-        if (verbose) {
-          message(sprintf("\tontology '%s' (%s) ...", x, as.character(Sys.time())), appendLF = T)
-        }
-        eSet <- oSEA(data = list_vec[[i]], set = y, ig = NULL, background = background, size.range = size.range, min.overlap = min.overlap, which.distance = which.distance, test = test, background.annotatable.only = background.annotatable.only, p.tail = p.tail, p.adjust.method = p.adjust.method, ontology.algorithm = ontology.algorithm, elim.pvalue = elim.pvalue, lea.depth = lea.depth, path.mode = path.mode, true.path.rule = true.path.rule, verbose = FALSE)
-      })) %>%
-      dplyr::filter(purrr::map_lgl(eset, ~ !is.null(.x))) %>%
-      dplyr::mutate(info = purrr::map(eset, ~ .x$info)) %>%
-      dplyr::mutate(data = purrr::map(eset, ~ .x$data)) %>%
-      dplyr::mutate(background = purrr::map(eset, ~ .x$background)) %>%
-      dplyr::select(onto, info, data, background) -> df_res
-
-    pb$tick()$print()
-
-    tibble::tibble(group = names(list_vec)[i], df_res)
-  })
-  df_res_all <- do.call(rbind, ls_df)
-
-  eSAD <- df_res_all
-  class(eSAD) <- c("eSAD", class(eSAD))
-  ####################################################################################
-  endT <- Sys.time()
-  runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units = "secs"))
-
-  if (!silent) {
-    message(paste(c("\nEnd at ", as.character(endT)), collapse = ""), appendLF = TRUE)
-    message(paste(c("Runtime in total (oSEAadv): ", runTime, " secs\n"), collapse = ""), appendLF = TRUE)
-  }
-
-  return(eSAD)
+    	sets %>% dplyr::mutate(eset=purrr::map2(onto, set, function(x,y){
+			if(verbose){
+				message(sprintf("\tontology '%s' (%s) ...", x, as.character(Sys.time())), appendLF=T)
+			}
+    		eSet <- oSEA(data=list_vec[[i]], set=y, ig=NULL, background=background, size.range=size.range, min.overlap=min.overlap, which.distance=which.distance, test=test, background.annotatable.only=background.annotatable.only, p.tail=p.tail, p.adjust.method=p.adjust.method, ontology.algorithm=ontology.algorithm, elim.pvalue=elim.pvalue, lea.depth=lea.depth, path.mode=path.mode, true.path.rule=true.path.rule, verbose=FALSE)
+    	})) %>% dplyr::filter(purrr::map_lgl(eset,~!is.null(.x))) %>% dplyr::mutate(info=purrr::map(eset,~.x$info)) %>% dplyr::mutate(data=purrr::map(eset,~.x$data)) %>% dplyr::mutate(background=purrr::map(eset,~.x$background)) %>% dplyr::select(onto, info, data, background) -> df_res
+    	
+    	pb$tick()$print()
+    	
+    	tibble::tibble(group=names(list_vec)[i], df_res)
+	})
+    df_res_all <- do.call(rbind, ls_df)
+    
+    eSAD <- df_res_all
+    class(eSAD) <- c("eSAD",class(eSAD))
+     ####################################################################################
+    endT <- Sys.time()
+    runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units="secs"))
+    
+    if(!silent){
+    	message(paste(c("\nEnd at ",as.character(endT)), collapse=""), appendLF=TRUE)
+    	message(paste(c("Runtime in total (oSEAadv): ",runTime," secs\n"), collapse=""), appendLF=TRUE)
+    }
+    
+    return(eSAD)
 }

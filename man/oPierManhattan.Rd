@@ -73,19 +73,19 @@ none
 }
 \examples{
 \dontrun{
-mp <- oPierManhattan(pNode, placeholder = placeholder)
+mp <- oPierManhattan(pNode, placeholder=placeholder)
 mp$gr
 ## control visuals
-mp <- oPierManhattan(pNode, color = "ggplot2", top = 50, top.label.col = "black", y.scale = "sqrt", placeholder = placeholder)
+mp <- oPierManhattan(pNode, color='ggplot2', top=50, top.label.col="black", y.scale="sqrt", placeholder=placeholder)
 mp
 ## control labels
 # only IL genes will be labelled
-ind <- grep("^IL", rownames(pNode$priority))
+ind <- grep('^IL', rownames(pNode$priority))
 top.label.query <- rownames(pNode$priority)[ind]
-mp <- oPierManhattan(pNode, top.label.query = top.label.query, placeholder = placeholder)
+mp <- oPierManhattan(pNode, top.label.query=top.label.query, placeholder=placeholder)
 mp
 # only IL genes will be displayed
-mp <- oPierManhattan(pNode, top.label.query = top.label.query, label.query.only = TRUE, placeholder = placeholder)
+mp <- oPierManhattan(pNode, top.label.query=top.label.query, label.query.only=TRUE, placeholder=placeholder)
 mp
 }
 }

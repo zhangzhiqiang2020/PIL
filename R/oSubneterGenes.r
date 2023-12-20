@@ -1,6 +1,6 @@
 #' Function to identify a subnetwork from an input network and the signficance level imposed on its nodes
 #'
-#' \code{oSubneterGenes} is supposed to identify maximum-scoring subnetwork from an input graph with the node information on the significance (measured as p-values or fdr). It returns an object of class "igraph".
+#' \code{oSubneterGenes} is supposed to identify maximum-scoring subnetwork from an input graph with the node information on the significance (measured as p-values or fdr). It returns an object of class "igraph". 
 #'
 #' @param data a named input vector containing the significance level for nodes (gene symbols). For this named vector, the element names are gene symbols, the element values for the significance level (measured as p-value or fdr). Alternatively, it can be a matrix or data frame with two columns: 1st column for gene symbols, 2nd column for the significance level
 #' @param network the built-in network. Currently two sources of network information are supported: the STRING database (version 10) and the Pathway Commons database (version 7). STRING is a meta-integration of undirect interactions from the functional aspect, while Pathways Commons mainly contains both undirect and direct interactions from the physical/pathway aspect. Both have scores to control the confidence of interactions. Therefore, the user can choose the different quality of the interactions. In STRING, "STRING_highest" indicates interactions with highest confidence (confidence scores>=900), "STRING_high" for interactions with high confidence (confidence scores>=700), "STRING_medium" for interactions with medium confidence (confidence scores>=400), and "STRING_low" for interactions with low confidence (confidence scores>=150). For undirect/physical interactions from Pathways Commons, "PCommonsUN_high" indicates undirect interactions with high confidence (supported with the PubMed references plus at least 2 different sources), "PCommonsUN_medium" for undirect interactions with medium confidence (supported with the PubMed references). For direct (pathway-merged) interactions from Pathways Commons, "PCommonsDN_high" indicates direct interactions with high confidence (supported with the PubMed references plus at least 2 different sources), and "PCommonsUN_medium" for direct interactions with medium confidence (supported with the PubMed references). In addition to pooled version of pathways from all data sources, the user can also choose the pathway-merged network from individual sources, that is, "PCommonsDN_Reactome" for those from Reactome, "PCommonsDN_KEGG" for those from KEGG, "PCommonsDN_HumanCyc" for those from HumanCyc, "PCommonsDN_PID" for those froom PID, "PCommonsDN_PANTHER" for those from PANTHER, "PCommonsDN_ReconX" for those from ReconX, "PCommonsDN_TRANSFAC" for those from TRANSFAC, "PCommonsDN_PhosphoSite" for those from PhosphoSite, and "PCommonsDN_CTD" for those from CTD. For direct (pathway-merged) interactions sourced from KEGG, it can be 'KEGG' for all, 'KEGG_metabolism' for pathways grouped into 'Metabolism', 'KEGG_genetic' for 'Genetic Information Processing' pathways, 'KEGG_environmental' for 'Environmental Information Processing' pathways, 'KEGG_cellular' for 'Cellular Processes' pathways, 'KEGG_organismal' for 'Organismal Systems' pathways, and 'KEGG_disease' for 'Human Diseases' pathways. 'REACTOME' for protein-protein interactions derived from Reactome pathways
@@ -27,236 +27,249 @@
 #' \dontrun{
 #' # perform network analysis
 #' # 1) find maximum-scoring subnet based on the given significance threshold
-#' subnet <- oSubneterGenes(data = data, network = "STRING_high", subnet.significance = 0.01)
+#' subnet <- oSubneterGenes(data=data, network="STRING_high", subnet.significance=0.01)
 #' # 2) find maximum-scoring subnet with the desired node number=50
-#' subnet <- oSubneterGenes(data = data, network = "STRING_high", subnet.size = 50)
+#' subnet <- oSubneterGenes(data=data, network="STRING_high", subnet.size=50)
 #' }
-oSubneterGenes <- function(data, network = NA, STRING.only = NA, network.customised = NULL, seed.genes = TRUE, subnet.significance = 0.01, subnet.size = NULL, test.permutation = FALSE, num.permutation = 100, respect = c("none", "degree"), aggregateBy = c("Ztransform", "fishers", "logistic", "orderStatistic"), verbose = TRUE, silent = FALSE, placeholder = NULL, guid = NULL) {
-  startT <- Sys.time()
-  if (!silent) {
-    message(paste(c("Start at ", as.character(startT)), collapse = ""), appendLF = TRUE)
-    message("", appendLF = TRUE)
-  } else {
-    verbose <- FALSE
-  }
-  ####################################################################################
 
-  ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
-  respect <- match.arg(respect)
-  aggregateBy <- match.arg(aggregateBy)
+oSubneterGenes <- function(data, network=NA, STRING.only=NA, network.customised=NULL, seed.genes=TRUE, subnet.significance=0.01, subnet.size=NULL, test.permutation=FALSE, num.permutation=100, respect=c("none","degree"), aggregateBy=c("Ztransform","fishers","logistic","orderStatistic"), verbose=TRUE, silent=FALSE, placeholder=NULL, guid=NULL)
+{
 
-  if (is.null(data)) {
-    # stop("The input data must be not NULL.\n")
-    return(NULL)
-  }
-  if (is.vector(data)) {
-    if (length(data) > 1) {
-      # assume a vector
-      if (is.null(names(data))) {
-        # stop("The input data must have names with attached gene symbols.\n")
+    startT <- Sys.time()
+    if(!silent){
+    	message(paste(c("Start at ",as.character(startT)), collapse=""), appendLF=TRUE)
+    	message("", appendLF=TRUE)
+    }else{
+    	verbose <- FALSE
+    }
+    ####################################################################################
+    
+    ## match.arg matches arg against a table of candidate values as specified by choices, where NULL means to take the first one
+    respect <- match.arg(respect)
+    aggregateBy <- match.arg(aggregateBy)
+    
+    if(is.null(data)){
+        #stop("The input data must be not NULL.\n")
         return(NULL)
-      }
-    } else {
-      # assume a file
-      data <- utils::read.delim(file = data, header = FALSE, row.names = NULL, stringsAsFactors = FALSE)
     }
-  }
-  if (is.vector(data)) {
-    pval <- data[!is.na(data)]
-  } else if (is.matrix(data) | is.data.frame(data)) {
-    data <- as.matrix(data)
-    data_list <- split(x = data[, 2], f = as.character(data[, 1]))
-    ## keep the miminum p-values per gene
-    res_list <- lapply(data_list, function(x) {
-      x <- as.numeric(x)
-      x <- x[!is.na(x)]
-      if (length(x) > 0) {
-        min(x)
-      } else {
-        NULL
-      }
-    })
-    pval <- unlist(res_list)
-  }
-
-  if (!is.null(network.customised) && is(network.customised, "igraph")) {
-    if (verbose) {
-      now <- Sys.time()
-      message(sprintf("Load the customised network (%s) ...", as.character(now)), appendLF = TRUE)
+    if (is.vector(data)){
+    	if(length(data)>1){
+    		# assume a vector
+			if(is.null(names(data))){
+				#stop("The input data must have names with attached gene symbols.\n")
+				return(NULL)
+			}
+		}else{
+			# assume a file
+			data <- utils::read.delim(file=data, header=FALSE, row.names=NULL, stringsAsFactors=FALSE)
+		}
     }
-    g <- network.customised
-  } else {
-    if (verbose) {
-      now <- Sys.time()
-      message(sprintf("Load the network %s (%s) ...", network, as.character(now)), appendLF = TRUE)
+    if (is.vector(data)){
+    	pval <- data[!is.na(data)]
+    }else if(is.matrix(data) | is.data.frame(data)){
+        data <- as.matrix(data)
+		data_list <- split(x=data[,2], f=as.character(data[,1]))
+		## keep the miminum p-values per gene
+		res_list <- lapply(data_list, function(x){
+			x <- as.numeric(x)
+			x <- x[!is.na(x)]
+			if(length(x)>0){
+				min(x)
+			}else{
+				NULL
+			}
+		})
+		pval <- unlist(res_list)
     }
+    
+    if(!is.null(network.customised) && is(network.customised,"igraph")){
+		if(verbose){
+			now <- Sys.time()
+			message(sprintf("Load the customised network (%s) ...", as.character(now)), appendLF=TRUE)
+		}
+		g <- network.customised
+		
+	}else{
+	
+		if(verbose){
+			now <- Sys.time()
+			message(sprintf("Load the network %s (%s) ...", network, as.character(now)), appendLF=TRUE)
+		}
+        
+        g <- oDefineNet(network=network, STRING.only=STRING.only, weighted=FALSE, verbose=FALSE, placeholder=placeholder, guid=guid)
 
-    g <- oDefineNet(network = network, STRING.only = STRING.only, weighted = FALSE, verbose = FALSE, placeholder = placeholder, guid = guid)
-  }
+	}
 
-  if (verbose) {
-    message(sprintf("The network you choose has %d nodes and %d edges", vcount(g), ecount(g)), appendLF = TRUE)
-  }
-
-  if (seed.genes) {
-    ## further restrict the network to only nodes/genes with pval values
-    ind <- match(V(g)$name, names(pval))
-    ## for extracted graph
-    nodes_mapped <- V(g)$name[!is.na(ind)]
-    g <- oNetInduce(ig = g, nodes_query = nodes_mapped, knn = 0, remove.loops = FALSE, largest.comp = TRUE)
-  } else {
-    ind <- match(V(g)$name, names(pval))
-    nodes_not_mapped <- V(g)$name[is.na(ind)]
-    pval_not_mapped <- rep(1, length(nodes_not_mapped))
-    names(pval_not_mapped) <- nodes_not_mapped
-    pval <- c(pval, pval_not_mapped)
-  }
-
-
-  if (verbose) {
-    message(sprintf("Restricted to data/nodes of interest, the network (with the largest interconnected component) has %d nodes and %d edges", vcount(g), ecount(g)), appendLF = TRUE)
-  }
-
-  #############################################################################################
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("\n#######################################################"))
-    message(sprintf("Start to identify a subnetwork (%s):", as.character(now)), appendLF = TRUE)
-    message(sprintf("#######################################################"))
-  }
-
-  if (is(suppressWarnings(try(subnet <- dnet::dNetPipeline(g = g, pval = pval, method = "customised", significance.threshold = subnet.significance, nsize = subnet.size, plot = FALSE, verbose = verbose), TRUE)), "try-error")) {
-    subnet <- NULL
-  } else {
-    if (test.permutation & !is.null(subnet.size)) {
-      if (verbose) {
-        message(sprintf("Estimate the significance of the identified network (%d nodes) based on %d permutation test respecting '%s' (%s) ...", vcount(subnet), num.permutation, respect, as.character(Sys.time())), appendLF = TRUE)
-      }
-
-      ####################
-      if (respect == "degree") {
-        ## equally binned
-        nbin <- 10
-        vec_degree <- degree(g)
-        breaks <- unique(stats::quantile(vec_degree, seq(0, 1, 1 / nbin)))
-        cut_index <- as.numeric(cut(vec_degree, breaks = breaks))
-        cut_index[is.na(cut_index)] <- 1
-        names(cut_index) <- V(g)$name
-        # update pval and generate pval_degree
-        ind <- match(names(pval), names(cut_index))
-        pval <- pval[!is.na(ind)]
-        pval_degree <- cut_index[ind[!is.na(ind)]]
-
-        ## df_ind_B
-        B <- num.permutation
-        set.seed(825)
-        ### per node
-        ls_df <- lapply(1:length(pval), function(i) {
-          # message(sprintf("%d (%s) ...", i, as.character(Sys.time())), appendLF=TRUE)
-          x <- pval[i]
-          ## all_to_sample:
-          ind <- match(names(x), names(pval_degree))
-          all_to_sample <- which(pval_degree == pval_degree[ind])
-          ## ind_sampled
-          ind_sampled <- base::sample(all_to_sample, B, replace = TRUE)
-          res <- data.frame(name = names(pval[i]), pval = pval[ind_sampled], B = 1:B, stringsAsFactors = FALSE)
-        })
-        df_ind_B <- do.call(rbind, ls_df)
-
-        # Estimate the significance of the identified subnetwork based on data permutation test
-        ls_index <- split(x = df_ind_B[, c("name", "pval")], f = df_ind_B$B)
-        ls_subnet_permutated <- lapply(1:length(ls_index), function(j) {
-          if (verbose & j %% 10 == 0) {
-            message(sprintf("\t%d (out of %d) (%s) ...", j, B, as.character(Sys.time())), appendLF = TRUE)
-          }
-          pval_permutated <- ls_index[[j]]$pval
-          names(pval_permutated) <- ls_index[[j]]$name
-          # For permutated pval
-          # subnet_permutated <- dnet::dNetPipeline(g=g, pval=pval_permutated, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=FALSE)
-          if (is(suppressWarnings(try(subnet_permutated <- suppressMessages(dnet::dNetPipeline(g = g, pval = pval_permutated, method = "customised", significance.threshold = subnet.significance, nsize = subnet.size, plot = FALSE, verbose = FALSE)), TRUE)), "try-error")) {
-            return(NULL)
-          } else {
-            return(subnet_permutated)
-          }
-        })
-        ## Remove null elements in a list
-        ls_subnet_permutated <- base::Filter(base::Negate(is.null), ls_subnet_permutated)
-      } else {
-        # Estimate the significance of the identified subnetwork based on data permutation test
-        B <- num.permutation
-        ls_subnet_permutated <- list()
-        set.seed(825)
-        for (j in 1:B) {
-          if (verbose & j %% 10 != 0) {
-            message(sprintf("\t%d (out of %d) (%s) ...", j, B, as.character(Sys.time())), appendLF = TRUE)
-          }
-          ind <- base::sample(1:length(pval), replace = TRUE)
-          pval_permutated <- pval[ind]
-          names(pval_permutated) <- names(pval)
-          # For permutated pval
-          # ls_subnet_permutated[[j]] <- dnet::dNetPipeline(g=g, pval=pval_permutated, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=FALSE)
-          if (is(suppressWarnings(try(ls_subnet_permutated[[j]] <- suppressMessages(dnet::dNetPipeline(g = g, pval = pval_permutated, method = "customised", significance.threshold = subnet.significance, nsize = subnet.size, plot = FALSE, verbose = FALSE)), TRUE)), "try-error")) {
-            ls_subnet_permutated[[j]] <- NULL
-          }
-        }
-        ## Remove null elements in a list
-        ls_subnet_permutated <- base::Filter(base::Negate(is.null), ls_subnet_permutated)
-      }
-
-      # append the confidence information from the source graphs into the target graph
-      subnet <- dnet::dNetConfidence(target = subnet, sources = ls_subnet_permutated, plot = FALSE)
-      E(subnet)$edgeConfidence <- E(subnet)$edgeConfidence / 100
-
-      # combined P-values for aggregated/global p-value
-      p_combined <- dnet::dPvalAggregate(pmatrix = matrix(E(subnet)$edgeConfidence, nrow = 1), method = aggregateBy)
-      subnet$combinedP <- p_combined
-
-      if (verbose) {
-        message(sprintf("\t'%s' combined p-value (%1.2e) of the identified network (%d nodes) based on %d permutation test respecting '%s' (%s)", aggregateBy, subnet$combinedP, vcount(subnet), num.permutation, respect, as.character(Sys.time())), appendLF = TRUE)
-      }
+    if(verbose){
+        message(sprintf("The network you choose has %d nodes and %d edges", vcount(g),ecount(g)), appendLF=TRUE)
     }
-  }
-  # subnet <- dnet::dNetPipeline(g=g, pval=pval, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=verbose)
-
-  # extract relevant info
-  # if(igraph::ecount(subnet)>0 && is(subnet,"igraph")){
-  if (is(subnet, "igraph")) {
-    relations <- igraph::get.data.frame(subnet, what = "edges")[, c(1, 2)]
-    if (!is.null(subnet$combinedP)) {
-      relations$edgeConfidence <- igraph::get.data.frame(subnet, what = "edges")[, "edgeConfidence"]
+	
+	if(seed.genes){
+		## further restrict the network to only nodes/genes with pval values
+		ind <- match(V(g)$name, names(pval))
+		## for extracted graph
+		nodes_mapped <- V(g)$name[!is.na(ind)]
+		g <- oNetInduce(ig=g, nodes_query=nodes_mapped, knn=0, remove.loops=FALSE, largest.comp=TRUE)
+	}else{
+		ind <- match(V(g)$name, names(pval))
+		nodes_not_mapped <- V(g)$name[is.na(ind)]
+		pval_not_mapped <- rep(1, length(nodes_not_mapped))
+		names(pval_not_mapped) <- nodes_not_mapped
+		pval <- c(pval, pval_not_mapped)
+	}
+	
+	    
+    if(verbose){
+        message(sprintf("Restricted to data/nodes of interest, the network (with the largest interconnected component) has %d nodes and %d edges", vcount(g),ecount(g)), appendLF=TRUE)
     }
-    nodes <- igraph::get.data.frame(subnet, what = "vertices")
-    nodes <- cbind(name = nodes$name, description = nodes$description, significance = pval[rownames(nodes)], score = nodes$score, type = nodes$type)
-    # nodes <- cbind(name=nodes$name, significance=pval[rownames(nodes)], score=nodes$score)
-    if (igraph::is.directed(subnet)) {
-      subg <- igraph::graph.data.frame(d = relations, directed = TRUE, vertices = nodes)
-    } else {
-      subg <- igraph::graph.data.frame(d = relations, directed = FALSE, vertices = nodes)
+    
+    #############################################################################################
+    
+    if(verbose){
+        now <- Sys.time()
+        message(sprintf("\n#######################################################"))
+        message(sprintf("Start to identify a subnetwork (%s):", as.character(now)), appendLF=TRUE)
+        message(sprintf("#######################################################"))
     }
-    if (!is.null(subnet$combinedP)) {
-      subg$combinedP <- subnet$combinedP
+    
+	if(is(suppressWarnings(try(subnet <- dnet::dNetPipeline(g=g, pval=pval, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=verbose), TRUE)),"try-error")){
+		subnet <- NULL
+		
+	}else{
+		
+		if(test.permutation & !is.null(subnet.size)){
+		
+			if(verbose){
+				message(sprintf("Estimate the significance of the identified network (%d nodes) based on %d permutation test respecting '%s' (%s) ...", vcount(subnet), num.permutation, respect, as.character(Sys.time())), appendLF=TRUE)
+			}
+			
+			####################
+			if(respect=='degree'){
+				## equally binned
+				nbin <- 10
+				vec_degree <- degree(g)
+				breaks <- unique(stats::quantile(vec_degree, seq(0, 1, 1/nbin)))
+				cut_index <- as.numeric(cut(vec_degree, breaks=breaks))
+				cut_index[is.na(cut_index)] <- 1
+				names(cut_index) <- V(g)$name
+				# update pval and generate pval_degree
+				ind <- match(names(pval), names(cut_index))
+				pval <- pval[!is.na(ind)]
+				pval_degree <- cut_index[ind[!is.na(ind)]]
+				
+				## df_ind_B
+				B <- num.permutation
+				set.seed(825)
+				### per node
+				ls_df <- lapply(1:length(pval), function(i){
+					#message(sprintf("%d (%s) ...", i, as.character(Sys.time())), appendLF=TRUE)
+					x <- pval[i]
+					## all_to_sample:
+					ind <- match(names(x), names(pval_degree))
+					all_to_sample <- which(pval_degree == pval_degree[ind])
+					## ind_sampled
+					ind_sampled <- base::sample(all_to_sample, B, replace=TRUE)
+					res <- data.frame(name=names(pval[i]), pval=pval[ind_sampled], B=1:B, stringsAsFactors=FALSE)
+				})
+				df_ind_B <- do.call(rbind, ls_df)
+			
+				# Estimate the significance of the identified subnetwork based on data permutation test
+				ls_index <- split(x=df_ind_B[,c("name","pval")], f=df_ind_B$B)
+				ls_subnet_permutated <- lapply(1:length(ls_index), function(j){
+					if(verbose & j%%10==0){
+						message(sprintf("\t%d (out of %d) (%s) ...", j, B, as.character(Sys.time())), appendLF=TRUE)
+					}
+					pval_permutated <- ls_index[[j]]$pval
+					names(pval_permutated) <- ls_index[[j]]$name
+					# For permutated pval
+					#subnet_permutated <- dnet::dNetPipeline(g=g, pval=pval_permutated, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=FALSE)
+					if(is(suppressWarnings(try(subnet_permutated <- suppressMessages(dnet::dNetPipeline(g=g, pval=pval_permutated, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=FALSE)), TRUE)),"try-error")){
+						return(NULL)
+					}else{
+						return(subnet_permutated)
+					}
+				})
+				## Remove null elements in a list
+				ls_subnet_permutated <- base::Filter(base::Negate(is.null), ls_subnet_permutated)
+			
+			}else{
+			
+				# Estimate the significance of the identified subnetwork based on data permutation test
+				B <- num.permutation
+				ls_subnet_permutated <- list()
+				set.seed(825)
+				for(j in 1:B){
+					if(verbose & j%%10!=0){
+						message(sprintf("\t%d (out of %d) (%s) ...", j, B, as.character(Sys.time())), appendLF=TRUE)
+					}
+					ind <- base::sample(1:length(pval), replace=TRUE)
+					pval_permutated <- pval[ind]
+					names(pval_permutated) <- names(pval)
+					# For permutated pval
+					#ls_subnet_permutated[[j]] <- dnet::dNetPipeline(g=g, pval=pval_permutated, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=FALSE)
+					if(is(suppressWarnings(try(ls_subnet_permutated[[j]] <- suppressMessages(dnet::dNetPipeline(g=g, pval=pval_permutated, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=FALSE)), TRUE)),"try-error")){
+						ls_subnet_permutated[[j]] <- NULL
+					}
+				}
+				## Remove null elements in a list
+				ls_subnet_permutated <- base::Filter(base::Negate(is.null), ls_subnet_permutated)
+				
+			}
+			
+			# append the confidence information from the source graphs into the target graph
+			subnet <- dnet::dNetConfidence(target=subnet, sources=ls_subnet_permutated, plot=FALSE)
+			E(subnet)$edgeConfidence <- E(subnet)$edgeConfidence/100
+			
+			# combined P-values for aggregated/global p-value
+			p_combined <- dnet::dPvalAggregate(pmatrix=matrix(E(subnet)$edgeConfidence,nrow=1), method=aggregateBy)
+			subnet$combinedP <- p_combined
+			
+			if(verbose){
+				message(sprintf("\t'%s' combined p-value (%1.2e) of the identified network (%d nodes) based on %d permutation test respecting '%s' (%s)", aggregateBy, subnet$combinedP, vcount(subnet), num.permutation, respect, as.character(Sys.time())), appendLF=TRUE)
+			}
+			
+		}
+	}
+    #subnet <- dnet::dNetPipeline(g=g, pval=pval, method="customised", significance.threshold=subnet.significance, nsize=subnet.size, plot=FALSE, verbose=verbose)
+
+	# extract relevant info
+	#if(igraph::ecount(subnet)>0 && is(subnet,"igraph")){
+	if(is(subnet,"igraph")){
+		relations <- igraph::get.data.frame(subnet, what="edges")[,c(1,2)]
+		if(!is.null(subnet$combinedP)){
+			relations$edgeConfidence <- igraph::get.data.frame(subnet, what="edges")[,"edgeConfidence"]
+		}
+		nodes <- igraph::get.data.frame(subnet, what="vertices")
+		nodes <- cbind(name=nodes$name, description=nodes$description, significance=pval[rownames(nodes)], score=nodes$score, type=nodes$type)
+		#nodes <- cbind(name=nodes$name, significance=pval[rownames(nodes)], score=nodes$score)
+		if(igraph::is.directed(subnet)){
+			subg <- igraph::graph.data.frame(d=relations, directed=TRUE, vertices=nodes)
+		}else{
+			subg <- igraph::graph.data.frame(d=relations, directed=FALSE, vertices=nodes)
+		}
+		if(!is.null(subnet$combinedP)){
+			subg$combinedP <- subnet$combinedP
+		}
+		subg$threshold <- subnet$threshold
+	}else{
+		subg <- NULL
+	}
+
+	if(verbose){
+        now <- Sys.time()
+        message(sprintf("#######################################################"))
+        message(sprintf("The subnetwork has been identified (%s)!", as.character(now)), appendLF=TRUE)
+        message(sprintf("#######################################################\n"))
     }
-    subg$threshold <- subnet$threshold
-  } else {
-    subg <- NULL
-  }
-
-  if (verbose) {
-    now <- Sys.time()
-    message(sprintf("#######################################################"))
-    message(sprintf("The subnetwork has been identified (%s)!", as.character(now)), appendLF = TRUE)
-    message(sprintf("#######################################################\n"))
-  }
-
-  ####################################################################################
-  endT <- Sys.time()
-  runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units = "secs"))
-
-  if (!silent) {
-    message(paste(c("\nEnd at ", as.character(endT)), collapse = ""), appendLF = TRUE)
-    message(paste(c("Runtime in total (oSubneterGenes): ", runTime, " secs\n"), collapse = ""), appendLF = TRUE)
-  }
-
-  return(subg)
+    
+    ####################################################################################
+    endT <- Sys.time()
+    runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), strptime(startT, "%Y-%m-%d %H:%M:%S"), units="secs"))
+    
+    if(!silent){
+    	message(paste(c("\nEnd at ",as.character(endT)), collapse=""), appendLF=TRUE)
+    	message(paste(c("Runtime in total (oSubneterGenes): ",runTime," secs\n"), collapse=""), appendLF=TRUE)
+    }
+    
+    return(subg)
 }

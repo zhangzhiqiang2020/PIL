@@ -41,31 +41,31 @@ It returns an igraph object, appended by node attributes including "xcoord" for 
 \dontrun{
 # load REACTOME
 # restricted to Immune System ('R-HSA-168256') or Signal Transduction ('R-HSA-162582')
-g <- oRDS("ig.REACTOME", placeholder = placeholder)
-neighs.out <- igraph::neighborhood(g, order = vcount(g), nodes = "R-HSA-168256", mode = "out")
+g <- oRDS('ig.REACTOME', placeholder=placeholder)
+neighs.out <- igraph::neighborhood(g, order=vcount(g), nodes="R-HSA-168256", mode="out")
 nodeInduced <- V(g)[unique(unlist(neighs.out))]$name
-ig <- igraph::induced.subgraph(g, vids = nodeInduced)
+ig <- igraph::induced.subgraph(g, vids=nodeInduced)
 
 # compare Fruchterman and Reingold force-directed placement algorithm
 ## based on igraph layout
-ig1 <- oLayout(ig, layout = "layout_with_fr")
-gp1 <- oGGnetwork(ig1, node.xcoord = "xcoord", node.ycoord = "ycoord")
+ig1 <- oLayout(ig, layout="layout_with_fr")
+gp1 <- oGGnetwork(ig1, node.xcoord="xcoord", node.ycoord="ycoord")
 ## based on sna layout
-ig2 <- oLayout(ig, layout = "gplot.layout.fruchtermanreingold")
-gp2 <- oGGnetwork(ig2, node.xcoord = "xcoord", node.ycoord = "ycoord")
+ig2 <- oLayout(ig, layout="gplot.layout.fruchtermanreingold")
+gp2 <- oGGnetwork(ig2, node.xcoord="xcoord", node.ycoord="ycoord")
 
 # compare Kamada-Kawai force-directed placement algorithm
 ## based on igraph layout
-ig1 <- oLayout(ig, layout = "layout_with_kk")
-gp1 <- oGGnetwork(ig1, node.xcoord = "xcoord", node.ycoord = "ycoord")
+ig1 <- oLayout(ig, layout="layout_with_kk")
+gp1 <- oGGnetwork(ig1, node.xcoord="xcoord", node.ycoord="ycoord")
 ## based on sna layout
-ig2 <- oLayout(ig, layout = "gplot.layout.kamadakawai")
-gp2 <- oGGnetwork(ig2, node.xcoord = "xcoord", node.ycoord = "ycoord")
+ig2 <- oLayout(ig, layout="gplot.layout.kamadakawai")
+gp2 <- oGGnetwork(ig2, node.xcoord="xcoord", node.ycoord="ycoord")
 ## do together
-layouts <- c("layout_with_fr", "gplot.layout.fruchtermanreingold", "layout_with_kk", "gplot.layout.kamadakawai", "gephi.forceatlas2")
-ls_ig <- lapply(layouts, function(x) oLayout(ig, layout = x))
+layouts <- c("layout_with_fr","gplot.layout.fruchtermanreingold","layout_with_kk","gplot.layout.kamadakawai", "gephi.forceatlas2")
+ls_ig <- lapply(layouts, function(x) oLayout(ig, layout=x))
 names(ls_ig) <- layouts
-gp <- oGGnetwork(ls_ig, node.xcoord = "xcoord", node.ycoord = "ycoord", ncolumns = 5)
+gp <- oGGnetwork(ls_ig, node.xcoord='xcoord', node.ycoord='ycoord', ncolumns=5)
 }
 }
 \seealso{

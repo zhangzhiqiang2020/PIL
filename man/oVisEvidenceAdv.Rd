@@ -107,7 +107,7 @@ a ggplot object.
 \examples{
 \dontrun{
 ## TNFRSF1A
-oVisEvidenceAdv(xTarget, nodes = "TNFRSF1A", neighbor.order = 1, neighbor.seed = TRUE, neighbor.top = NULL)
+oVisEvidenceAdv(xTarget, nodes="TNFRSF1A", neighbor.order=1, neighbor.seed=TRUE, neighbor.top=NULL)
 }
 }
 \seealso{

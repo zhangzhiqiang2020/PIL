@@ -67,24 +67,24 @@ The input graph will treat as an unweighted graph if there is no 'weight' edge a
 \examples{
 \dontrun{
 # STRING (high quality)
-g <- oDefineNet("STRING_high", placeholder = placeholder)
-# STRING (high quality), with edges weighted
-g <- oDefineNet("STRING_high", weighted = TRUE, placeholder = placeholder)
+g <- oDefineNet("STRING_high", placeholder=placeholder)
+# STRING (high quality), with edges weighted 
+g <- oDefineNet("STRING_high", weighted=TRUE, placeholder=placeholder)
 # STRING (high quality), only edges sourced from experimental or curated data
-g <- oDefineNet("STRING_high", STRING.only = c("experimental_score", "database_score"), placeholder = placeholder)
+g <- oDefineNet("STRING_high", STRING.only=c("experimental_score","database_score"), placeholder=placeholder)
 
-# Pathway Commons
-g <- oDefineNet("PCommonsDN_medium", placeholder = placeholder)
+# Pathway Commons 
+g <- oDefineNet("PCommonsDN_medium", placeholder=placeholder)
 
 # KEGG (all)
-g <- oDefineNet("KEGG", placeholder = placeholder)
+g <- oDefineNet("KEGG", placeholder=placeholder)
 # KEGG category ('Organismal Systems')
-g <- oDefineNet("KEGGc_OrganismalSystem", placeholder = placeholder)
+g <- oDefineNet("KEGGc_OrganismalSystem", placeholder=placeholder)
 # KEGG subcategory ('Immune Systems')
-g <- oDefineNet("KEGGs_ImmuneSystem", placeholder = placeholder)
+g <- oDefineNet("KEGGs_ImmuneSystem", placeholder=placeholder)
 
-# REACTOME
-g <- oDefineNet("REACTOME", placeholder = placeholder)
+# REACTOME 
+g <- oDefineNet("REACTOME", placeholder=placeholder)
 }
 }
 \seealso{
