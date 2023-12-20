@@ -35,14 +35,14 @@ none
 \examples{
 set.seed(825)
 ig <- sample_pa(20)
-V(ig)$name <- seq(1,vcount(ig))
-ig \%>\% oIG2TB('edges') -> edges
-ig \%>\% oIG2TB('nodes') -> nodes
+V(ig)$name <- seq(1, vcount(ig))
+ig \%>\% oIG2TB("edges") -> edges
+ig \%>\% oIG2TB("nodes") -> nodes
 
 oTB2IG(edges, nodes) -> g
 
 # nodes do not contain all vertices in the edges
-nodes[1:10,] -> nodes2
+nodes[1:10, ] -> nodes2
 oTB2IG(edges, nodes2) -> g2
 }
 \seealso{

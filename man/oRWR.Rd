@@ -48,27 +48,27 @@ The input graph will treat as an unweighted graph if there is no 'weight' edge a
 \examples{
 # 1) generate a random graph according to the ER model
 set.seed(123)
-g <- erdos.renyi.game(10, 1/10)
+g <- erdos.renyi.game(10, 1 / 10)
 
 \dontrun{
 # 2) produce the induced subgraph only based on the nodes in query
-subg <- oNetInduce(g, V(g), knn=0)
+subg <- oNetInduce(g, V(g), knn = 0)
 V(subg)$name <- 1:vcount(subg)
 
 # 3) obtain the pre-computated affinity matrix
-PTmatrix <- oRWR(g=subg, normalise="laplacian", restart=0.75, parallel=FALSE)
+PTmatrix <- oRWR(g = subg, normalise = "laplacian", restart = 0.75, parallel = FALSE)
 # visualise affinity matrix
-visHeatmapAdv(as.matrix(PTmatrix), Rowv=FALSE, Colv=FALSE, colormap="wyr", KeyValueName="Affinity")
+visHeatmapAdv(as.matrix(PTmatrix), Rowv = FALSE, Colv = FALSE, colormap = "wyr", KeyValueName = "Affinity")
 
 # 4) obtain affinity matrix given sets of seeds
 # define sets of seeds
 # each seed with equal weight (i.e. all non-zero entries are '1')
-aSeeds <- c(1,0,1,0,1)
-bSeeds <- c(0,0,1,0,1)
-setSeeds <- data.frame(aSeeds,bSeeds)
+aSeeds <- c(1, 0, 1, 0, 1)
+bSeeds <- c(0, 0, 1, 0, 1)
+setSeeds <- data.frame(aSeeds, bSeeds)
 rownames(setSeeds) <- 1:5
 # calcualte affinity matrix
-PTmatrix <- oRWR(g=subg, normalise="laplacian", setSeeds=setSeeds, restart=0.75, parallel=FALSE)
+PTmatrix <- oRWR(g = subg, normalise = "laplacian", setSeeds = setSeeds, restart = 0.75, parallel = FALSE)
 PTmatrix
 }
 }

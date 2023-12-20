@@ -76,13 +76,13 @@ The input graph will treat as an unweighted graph if there is no 'weight' edge a
 ## get genes within 500kb away from AS GWAS lead SNPs
 seeds.genes <- ImmunoBase$AS$genes_variants
 ## seeds weighted according to distance away from lead SNPs
-data <- 1- seeds.genes/500000
+data <- 1 - seeds.genes / 500000
 
 # b) perform priority analysis
-pNode <- oPierGenes(data=data, network="PCommonsDN_medium",restart=0.7, placeholder=placeholder)
+pNode <- oPierGenes(data = data, network = "PCommonsDN_medium", restart = 0.7, placeholder = placeholder)
 
 # c) save to the file called 'Genes_priority.txt'
-write.table(pNode$priority, file="Genes_priority.txt", sep="\t", row.names=FALSE)
+write.table(pNode$priority, file = "Genes_priority.txt", sep = "\t", row.names = FALSE)
 }
 }
 \seealso{

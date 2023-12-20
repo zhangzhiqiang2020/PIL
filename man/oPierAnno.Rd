@@ -78,25 +78,25 @@ The input graph will treat as an unweighted graph if there is no 'weight' edge a
 \dontrun{
 # a) provide the seed nodes/genes with the weight info
 ## load ImmunoBase
-ImmunoBase <- oRDS(RData.customised='ImmunoBase', placeholder=placeholder)
+ImmunoBase <- oRDS(RData.customised = "ImmunoBase", placeholder = placeholder)
 ## get genes within 500kb away from AS GWAS lead SNPs
 seeds.genes <- ImmunoBase$AS$genes_variants
 ## seeds weighted according to distance away from lead SNPs
-data <- 1- seeds.genes/500000
+data <- 1 - seeds.genes / 500000
 
 # b) perform priority analysis
-pNode <- oPierGenes(data=data, network="PCommonsDN_medium",restart=0.7, placeholder=placeholder)
+pNode <- oPierGenes(data = data, network = "PCommonsDN_medium", restart = 0.7, placeholder = placeholder)
 
 # c) get annotation data
 data.file <- file.path(placeholder, "iAnno.txt")
-iA <- read.delim(data.file, header=TRUE, stringsAsFactors=FALSE)[, 1:14]
-data_anno <- subset(iA, OMIM>0, select=c("Symbol","OMIM"))
+iA <- read.delim(data.file, header = TRUE, stringsAsFactors = FALSE)[, 1:14]
+data_anno <- subset(iA, OMIM > 0, select = c("Symbol", "OMIM"))
 
 # d) perform priority analysis using annotation data
-pNode_anno <- oPierAnno(data_anno, list_pNode=pNode, network="PCommonsDN_medium", restart=0.7, placeholder=placeholder)
+pNode_anno <- oPierAnno(data_anno, list_pNode = pNode, network = "PCommonsDN_medium", restart = 0.7, placeholder = placeholder)
 
 # c) save to the file called 'Genes_priority.Anno.txt'
-write.table(pNode_anno$priority, file="Genes_priority.Anno.txt", sep="\t", row.names=FALSE)
+write.table(pNode_anno$priority, file = "Genes_priority.Anno.txt", sep = "\t", row.names = FALSE)
 }
 }
 \seealso{

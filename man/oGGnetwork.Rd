@@ -124,63 +124,63 @@ none
 ###########################
 # load REACTOME
 # restricted to Immune System ('R-HSA-168256') or Signal Transduction ('R-HSA-162582')
-g <- oRDS('ig.REACTOME')
-neighs.out <- igraph::neighborhood(g, order=vcount(g), nodes="R-HSA-168256", mode="out")
+g <- oRDS("ig.REACTOME")
+neighs.out <- igraph::neighborhood(g, order = vcount(g), nodes = "R-HSA-168256", mode = "out")
 nodeInduced <- V(g)[unique(unlist(neighs.out))]$name
-ig <- igraph::induced.subgraph(g, vids=nodeInduced)
+ig <- igraph::induced.subgraph(g, vids = nodeInduced)
 
 # visualise the graph with vertices being color-coded
 V(ig)$degree <- igraph::degree(ig)
-gp <- oGGnetwork(g=ig, node.label='term_id', label.wrap.width=30, node.label.size=2, node.label.color='black', node.label.alpha=0.8, node.label.padding=0, node.label.arrow=0, node.label.force=1, node.shape=19, node.xcoord='xcoord', node.ycoord='ycoord', node.color='degree', node.color.title='Degree', colormap='grey-orange-darkred', ncolors=64, zlim=c(0,10), node.size.range=3, edge.color="black",edge.color.alpha=0.3,edge.curve=0.05,edge.arrow.gap=0.02, title='')
+gp <- oGGnetwork(g = ig, node.label = "term_id", label.wrap.width = 30, node.label.size = 2, node.label.color = "black", node.label.alpha = 0.8, node.label.padding = 0, node.label.arrow = 0, node.label.force = 1, node.shape = 19, node.xcoord = "xcoord", node.ycoord = "ycoord", node.color = "degree", node.color.title = "Degree", colormap = "grey-orange-darkred", ncolors = 64, zlim = c(0, 10), node.size.range = 3, edge.color = "black", edge.color.alpha = 0.3, edge.curve = 0.05, edge.arrow.gap = 0.02, title = "")
 # advanced use: visualise the list of graphs
 ls_ig <- list(ig, ig)
-gp <- oGGnetwork(g=ls_ig, node.label='term_id', label.wrap.width=30, node.label.size=2, node.label.color='black', node.label.alpha=0.8, node.label.padding=0, node.label.arrow=0, node.label.force=1, node.shape=19, node.xcoord='xcoord', node.ycoord='ycoord', node.color='degree', node.color.title='Degree', colormap='grey-orange-darkred', ncolors=64, zlim=c(0,10), node.size.range=3, edge.color="black",edge.color.alpha=0.3,edge.curve=0.05,edge.arrow.gap=0.02, title='')
+gp <- oGGnetwork(g = ls_ig, node.label = "term_id", label.wrap.width = 30, node.label.size = 2, node.label.color = "black", node.label.alpha = 0.8, node.label.padding = 0, node.label.arrow = 0, node.label.force = 1, node.shape = 19, node.xcoord = "xcoord", node.ycoord = "ycoord", node.color = "degree", node.color.title = "Degree", colormap = "grey-orange-darkred", ncolors = 64, zlim = c(0, 10), node.size.range = 3, edge.color = "black", edge.color.alpha = 0.3, edge.curve = 0.05, edge.arrow.gap = 0.02, title = "")
 
 ###########################
 # load PhasedTargets
 # restricted to disease ('EFO:0000408') or immune system disease ('EFO:0000540')
-g <- oRDS(RData.customised='ig.PhasedTargets', placeholder=placeholder)
-neighs.out <- igraph::neighborhood(g, order=vcount(g), nodes="EFO:0000408", mode="out")
+g <- oRDS(RData.customised = "ig.PhasedTargets", placeholder = placeholder)
+neighs.out <- igraph::neighborhood(g, order = vcount(g), nodes = "EFO:0000408", mode = "out")
 nodeInduced <- V(g)[unique(unlist(neighs.out))]$name
-ig <- igraph::induced.subgraph(g, vids=nodeInduced)
+ig <- igraph::induced.subgraph(g, vids = nodeInduced)
 
 # append with the number of approved and phased targets
 dag <- ig
-V(dag)$num_approved <- sapply(V(ig)$max_phase,function(x) sum(x$max_phase>=4))
-V(dag)$num_phased <- sapply(V(ig)$max_phase,function(x) sum(x$max_phase>=0))
+V(dag)$num_approved <- sapply(V(ig)$max_phase, function(x) sum(x$max_phase >= 4))
+V(dag)$num_phased <- sapply(V(ig)$max_phase, function(x) sum(x$max_phase >= 0))
 # keep nodes with num_approved >=20
-dag_ig <- igraph::induced.subgraph(dag, vids=which(V(dag)$num_approved>=20))
+dag_ig <- igraph::induced.subgraph(dag, vids = which(V(dag)$num_approved >= 20))
 # (optional) further restricted to the direct children of the root
 root <- dnet::dDAGroot(dag_ig)
-neighs.out <- igraph::neighborhood(dag_ig, order=1, nodes=root, mode="out")
+neighs.out <- igraph::neighborhood(dag_ig, order = 1, nodes = root, mode = "out")
 nodeInduced <- V(dag_ig)[unique(unlist(neighs.out))]$name
-dag_ig <- igraph::induced.subgraph(dag_ig, vids=nodeInduced)
+dag_ig <- igraph::induced.subgraph(dag_ig, vids = nodeInduced)
 # nodes colored by num_approved
 V(dag_ig)$node_color <- log2(V(dag_ig)$num_approved)
 glayout <- igraph::layout_with_kk(dag_ig)
-V(dag_ig)$xcoord <- glayout[,1]
-V(dag_ig)$ycoord <- glayout[,2]
-gp <- oGGnetwork(g=dag_ig, node.label='term_name', label.wrap.width=30, node.label.size=2, node.label.color='black', node.label.alpha=0.9, node.label.padding=0, node.label.arrow=0, node.label.force=0.5, node.shape=19, node.xcoord='xcoord', node.ycoord='ycoord', node.color='node_color', node.color.title='Approved\n(log2-scale)', colormap='ggplot2.top', ncolors=64, node.size.range=3, edge.color="orange",edge.color.alpha=0.5,edge.curve=0.05,edge.arrow.gap=0.02, title='')
+V(dag_ig)$xcoord <- glayout[, 1]
+V(dag_ig)$ycoord <- glayout[, 2]
+gp <- oGGnetwork(g = dag_ig, node.label = "term_name", label.wrap.width = 30, node.label.size = 2, node.label.color = "black", node.label.alpha = 0.9, node.label.padding = 0, node.label.arrow = 0, node.label.force = 0.5, node.shape = 19, node.xcoord = "xcoord", node.ycoord = "ycoord", node.color = "node_color", node.color.title = "Approved\n(log2-scale)", colormap = "ggplot2.top", ncolors = 64, node.size.range = 3, edge.color = "orange", edge.color.alpha = 0.5, edge.curve = 0.05, edge.arrow.gap = 0.02, title = "")
 
 ###########################
 # visualise gene network
 glayout <- igraph::layout_with_kk(g)
-V(g)$xcoord <- glayout[,1]
-V(g)$ycoord <- glayout[,2]
+V(g)$xcoord <- glayout[, 1]
+V(g)$ycoord <- glayout[, 2]
 V(g)$degree <- igraph::degree(g)
-gp <- oGGnetwork(g=g, node.label='name', node.label.size=2, node.label.color='black', node.label.alpha=0.8, node.label.padding=0, node.label.arrow=0, node.label.force=0.01, node.shape=19, node.xcoord='xcoord', node.ycoord='ycoord', node.color='priority', node.color.title='5-star\nrating', colormap='yellow-red', ncolors=64, zlim=c(0,5), node.size='degree', node.size.title='Degree', slim=c(0,5), edge.color="orange",edge.color.alpha=0.5,edge.curve=0,edge.arrow.gap=0.025, title='')
-gp_rating <- oGGnetwork(g=g, node.label='name', node.label.size=2, node.label.color='black', node.label.alpha=0.8, node.label.padding=0.1, node.label.arrow=0, node.label.force=0.01, node.shape=19, node.xcoord='xcoord', node.ycoord='ycoord', node.color='priority', node.color.title='5-star\nrating', colormap='white-yellow-red', ncolors=64, zlim=c(0,5), node.size.range=5, edge.color="orange",edge.color.alpha=0.3,edge.curve=0,edge.arrow.gap=0.02, title='')
+gp <- oGGnetwork(g = g, node.label = "name", node.label.size = 2, node.label.color = "black", node.label.alpha = 0.8, node.label.padding = 0, node.label.arrow = 0, node.label.force = 0.01, node.shape = 19, node.xcoord = "xcoord", node.ycoord = "ycoord", node.color = "priority", node.color.title = "5-star\nrating", colormap = "yellow-red", ncolors = 64, zlim = c(0, 5), node.size = "degree", node.size.title = "Degree", slim = c(0, 5), edge.color = "orange", edge.color.alpha = 0.5, edge.curve = 0, edge.arrow.gap = 0.025, title = "")
+gp_rating <- oGGnetwork(g = g, node.label = "name", node.label.size = 2, node.label.color = "black", node.label.alpha = 0.8, node.label.padding = 0.1, node.label.arrow = 0, node.label.force = 0.01, node.shape = 19, node.xcoord = "xcoord", node.ycoord = "ycoord", node.color = "priority", node.color.title = "5-star\nrating", colormap = "white-yellow-red", ncolors = 64, zlim = c(0, 5), node.size.range = 5, edge.color = "orange", edge.color.alpha = 0.3, edge.curve = 0, edge.arrow.gap = 0.02, title = "")
 
 ###########################
 # use edge weight to color/size edges (without legends)
 # edge color
-#E(g)$color <- oColormap(colormap='RdYlBu', data=E(g)$weight)
-#E(g)$size <- (E(g)$weight - min(E(g)$weight)) / (max(E(g)$weight) - min(E(g)$weight))
+# E(g)$color <- oColormap(colormap='RdYlBu', data=E(g)$weight)
+# E(g)$size <- (E(g)$weight - min(E(g)$weight)) / (max(E(g)$weight) - min(E(g)$weight))
 e.color <- subset(gp$data, !is.na(na.y))$e.color
-gp + ggnetwork::geom_edges(color=e.color, show.legend=FALSE)
+gp + ggnetwork::geom_edges(color = e.color, show.legend = FALSE)
 # edge size/thickness
 e.size <- subset(gp$data, !is.na(na.y))$e.size
-gp + ggnetwork::geom_edges(size=e.size, show.legend=FALSE)
+gp + ggnetwork::geom_edges(size = e.size, show.legend = FALSE)
 }
 }
 \seealso{

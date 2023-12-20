@@ -43,17 +43,17 @@ The given vertices plus their k nearest neighbors will be used to induce the sub
 \examples{
 \dontrun{
 # 1) generate a random graph according to the ER model
-g <- erdos.renyi.game(100, 1/100)
+g <- erdos.renyi.game(100, 1 / 100)
 V(g)$name <- as.character(V(g))
 
 # 2) select the first 10 vertices as the query nodes
 nodes_query <- as.character(1:4)
 
 # 3) produce the induced subgraph only based on the nodes in query
-subg <- oNetInduce(g, nodes_query, knn=0)
+subg <- oNetInduce(g, nodes_query, knn = 0)
 
 # 4) produce the induced subgraph based on the nodes in query are their immediate neighbours
-subg <- oNetInduce(g, nodes_query, knn=1)
+subg <- oNetInduce(g, nodes_query, knn = 1)
 }
 }
 \seealso{

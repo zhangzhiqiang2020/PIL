@@ -43,7 +43,7 @@ If a symbol mapped many times, the one assiged as the "protein-coding" type of g
 
 # a) provide the input Genes of interest (eg 100 randomly chosen human genes)
 ## load human genes
-org.Hs.eg <- oRDS('org.Hs.eg', placeholder=placeholder)
+org.Hs.eg <- oRDS("org.Hs.eg", placeholder = placeholder)
 Symbol <- sample(org.Hs.eg$info$Symbol, 100)
 Symbol
 
@@ -51,11 +51,11 @@ Symbol
 GeneID <- oSymbol2GeneID(Symbol)
 
 # c) convert into a data frame
-df <- oSymbol2GeneID(Symbol, details=TRUE)
+df <- oSymbol2GeneID(Symbol, details = TRUE)
 
 
 # advanced use
-df <- oSymbol2GeneID(Symbol, org=org.Hs.eg, details=TRUE)
+df <- oSymbol2GeneID(Symbol, org = org.Hs.eg, details = TRUE)
 }
 }
 \seealso{

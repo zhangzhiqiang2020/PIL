@@ -58,12 +58,12 @@ none
 \examples{
 \dontrun{
 # obtain repurposing matrix
-DR <- oRepurpose(data, RData.location=RData.location, reorder="none", colormap="ggplot2.top", zlim=c(1,4), na.color='transparent', label.size=1.5, label.color="white")
-DR$gp + theme(legend.position="none")
+DR <- oRepurpose(data, RData.location = RData.location, reorder = "none", colormap = "ggplot2.top", zlim = c(1, 4), na.color = "transparent", label.size = 1.5, label.color = "white")
+DR$gp + theme(legend.position = "none")
 grid::grid.draw(DR$gtable)
-ggpubr::ggarrange(DR$gp,DR$gtable,ncol=2,labels=c("A","B"))
-write.table(DR$df, file="oRepurpose.txt", sep="\t", row.names=F, quote=F)
-write.table(DR$index, file="oRepurpose_index.txt", sep="\t", row.names=F, quote=F)
+ggpubr::ggarrange(DR$gp, DR$gtable, ncol = 2, labels = c("A", "B"))
+write.table(DR$df, file = "oRepurpose.txt", sep = "\t", row.names = F, quote = F)
+write.table(DR$index, file = "oRepurpose_index.txt", sep = "\t", row.names = F, quote = F)
 }
 }
 \seealso{

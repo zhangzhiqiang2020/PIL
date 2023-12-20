@@ -38,7 +38,7 @@ palette.name (a function that takes an integer argument for generating that numb
 \code{oColormap} is supposed to define a colormap. It returns a function, which will take an integer argument specifying how many colors interpolate the given colormap.
 }
 \note{
-The input colormap includes: 
+The input colormap includes:
 \itemize{
 \item{"jet": jet colormap}
 \item{"bwr": blue-white-red}
@@ -55,22 +55,22 @@ The input colormap includes:
 }
 \examples{
 # 1) define "blue-white-red" colormap
-palette.name <- oColormap(colormap="bwr")
+palette.name <- oColormap(colormap = "bwr")
 # use the return function "palette.name" to generate 10 colors spanning "bwr"
 palette.name(10)
 
 # 2) define default colormap from ggplot2
-palette.name <- oColormap(colormap="ggplot2")
+palette.name <- oColormap(colormap = "ggplot2")
 # use the return function "palette.name" to generate 3 default colors used by ggplot2
 palette.name(3)
 
 # 3) define brewer colormap called "RdYlBu"
-palette.name <- oColormap(colormap="RdYlBu")
+palette.name <- oColormap(colormap = "RdYlBu")
 # use the return function "palette.name" to generate 3 default colors used by ggplot2
 palette.name(3)
 
 # 4) return mapped colors
-oColormap(colormap="RdYlBu", data=runif(5))
+oColormap(colormap = "RdYlBu", data = runif(5))
 }
 \seealso{
 \code{\link{oColormap}}

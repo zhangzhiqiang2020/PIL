@@ -77,9 +77,9 @@ a subgraph, an object of class "igraph".
 \examples{
 \dontrun{
 ## TNFRSF1A
-oVisEvidence(xTarget, nodes="TNFRSF1A", neighbor.order=1, neighbor.seed=TRUE, neighbor.top=NULL, vertex.label.color="black", vertex.label.cex=0.7, vertex.label.dist=0.6, vertex.label.font=1, vertex.label.family="Arial", legend.position="bottomleft", legend.horiz=TRUE, newpage=FALSE)
+oVisEvidence(xTarget, nodes = "TNFRSF1A", neighbor.order = 1, neighbor.seed = TRUE, neighbor.top = NULL, vertex.label.color = "black", vertex.label.cex = 0.7, vertex.label.dist = 0.6, vertex.label.font = 1, vertex.label.family = "Arial", legend.position = "bottomleft", legend.horiz = TRUE, newpage = FALSE)
 ## UBA52
-oVisEvidence(xTarget, nodes="UBA52", neighbor.order=1, neighbor.seed=TRUE, neighbor.top=20, vertex.label.color="black", vertex.label.cex=0.7, vertex.label.dist=0.6, vertex.label.font=1, legend.position="bottomleft", legend.horiz=TRUE, newpage=FALSE)
+oVisEvidence(xTarget, nodes = "UBA52", neighbor.order = 1, neighbor.seed = TRUE, neighbor.top = 20, vertex.label.color = "black", vertex.label.cex = 0.7, vertex.label.dist = 0.6, vertex.label.font = 1, legend.position = "bottomleft", legend.horiz = TRUE, newpage = FALSE)
 }
 }
 \seealso{

@@ -23,9 +23,9 @@ none
 \examples{
 set.seed(825)
 ig <- sample_pa(20)
-V(ig)$name <- seq(1,vcount(ig))
-ig \%>\% oIG2TB('edges')
-ig \%>\% oIG2TB('nodes')
+V(ig)$name <- seq(1, vcount(ig))
+ig \%>\% oIG2TB("edges")
+ig \%>\% oIG2TB("nodes")
 }
 \seealso{
 \code{\link{oIG2TB}}

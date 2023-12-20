@@ -59,7 +59,10 @@ none
 \examples{
 \dontrun{
 obj \%>\% oSEAforest()
-obj \%>\% oSEAextract() \%>\% filter(onto=='PSG') \%>\% oSEAforest()
+obj \%>\%
+  oSEAextract() \%>\%
+  filter(onto == "PSG") \%>\%
+  oSEAforest()
 }
 }
 \seealso{

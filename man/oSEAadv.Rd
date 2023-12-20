@@ -70,25 +70,31 @@ none
 }
 \examples{
 \dontrun{
-sets <- tibble(onto=c('GOMF','GOBP','KEGG','Bucket','PSG')[c(1)]) \%>\% mutate(set=map(onto,~oRDS(str_c("org.Hs.eg",.x),placeholder=placeholder)))
+sets <- tibble(onto = c("GOMF", "GOBP", "KEGG", "Bucket", "PSG")[c(1)]) \%>\% mutate(set = map(onto, ~ oRDS(str_c("org.Hs.eg", .x), placeholder = placeholder)))
 
-BioGRID_HCoV <- oRDS("BioGRID_HCoV", placeholder=placeholder)
-list_vec <- BioGRID_HCoV \%>\% nest(data=-from_tax) \%>\% mutate(gene=map(data,~pull(.x,to))) \%>\% select(-data) \%>\% deframe()
+BioGRID_HCoV <- oRDS("BioGRID_HCoV", placeholder = placeholder)
+list_vec <- BioGRID_HCoV \%>\%
+  nest(data = -from_tax) \%>\%
+  mutate(gene = map(data, ~ pull(.x, to))) \%>\%
+  select(-data) \%>\%
+  deframe()
 
 # basic analysis
 esad <- oSEAadv(list_vec, sets)
-esad \%>\% oSEAextract() \%>\% write_delim('results_esad.txt','\t')
-gp <- oSEAballoon(esad, top=10, adjp.cutoff=0.05, zlim=c(0,10), slim=NULL)
-gp + theme(axis.text.y=element_text(size=6),axis.text.x=element_text(size=6),strip.text.y=element_text(size=6,angle=0))
+esad \%>\%
+  oSEAextract() \%>\%
+  write_delim("results_esad.txt", "\t")
+gp <- oSEAballoon(esad, top = 10, adjp.cutoff = 0.05, zlim = c(0, 10), slim = NULL)
+gp + theme(axis.text.y = element_text(size = 6), axis.text.x = element_text(size = 6), strip.text.y = element_text(size = 6, angle = 0))
 
 # advanced analysis
-ig <- oRDS("ig.GOMF", placeholder=placeholder)
+ig <- oRDS("ig.GOMF", placeholder = placeholder)
 V(ig)$name <- V(ig)$term_name
 # advanced visual
-gp <- oSEAggraph(esad, ig, fixed=F, leave=F, layout='dendrogram', node.label.size=0)
-gp$gp_template + ggraph::geom_node_text(aes(filter=leaf,label=name,angle=node_angle(x,y)), repel=F,hjust=0,size=1.5) + ggraph::geom_node_text(aes(filter=!leaf,label=name), repel=T,size=1.5,color='red',alpha=0.5,check_overlap=T)+ expand_limits(x=c(-2,2), y=c(-2,2)) -> gp_template
-gp + geom_edge_diagonal2(aes(color=node.term_namespace, alpha=stat(index)),width=0.2) + scale_edge_alpha('direction', guide='edge_direction') + theme(legend.box='vertical') -> gp1
-gp1 + guides(edge_alpha=F, edge_colour=guide_legend('namespace',direction="vertical"), size=guide_legend('-log10(FDR)','top',direction="horizontal",ncol=3), color=guide_colorbar('Z-score','top',direction="horizontal",barheight=0.5)) + theme(legend.position='right')
+gp <- oSEAggraph(esad, ig, fixed = F, leave = F, layout = "dendrogram", node.label.size = 0)
+gp$gp_template + ggraph::geom_node_text(aes(filter = leaf, label = name, angle = node_angle(x, y)), repel = F, hjust = 0, size = 1.5) + ggraph::geom_node_text(aes(filter = !leaf, label = name), repel = T, size = 1.5, color = "red", alpha = 0.5, check_overlap = T) + expand_limits(x = c(-2, 2), y = c(-2, 2)) -> gp_template
+gp + geom_edge_diagonal2(aes(color = node.term_namespace, alpha = stat(index)), width = 0.2) + scale_edge_alpha("direction", guide = "edge_direction") + theme(legend.box = "vertical") -> gp1
+gp1 + guides(edge_alpha = F, edge_colour = guide_legend("namespace", direction = "vertical"), size = guide_legend("-log10(FDR)", "top", direction = "horizontal", ncol = 3), color = guide_colorbar("Z-score", "top", direction = "horizontal", barheight = 0.5)) + theme(legend.position = "right")
 }
 }
 \seealso{

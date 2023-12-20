@@ -33,36 +33,59 @@ none
 \dontrun{
 set.seed(825)
 ig <- sample_pa(20)
-V(ig)$name <- paste0('n',seq(1,vcount(ig)))
+V(ig)$name <- paste0("n", seq(1, vcount(ig)))
 
-ig \%>\% oAttack(measure='betweenness')
-ig \%>\% oAttack(measure='degree')
+ig \%>\% oAttack(measure = "betweenness")
+ig \%>\% oAttack(measure = "degree")
 
 # attackness for single nodes
-nodes.combine <- utils::combn(V(ig)$name, 1,simplify=F) -> nodes.combine
-ig \%>\% oAttack(measure='combine', nodes.combine=nodes.combine) -> df_attackness
+nodes.combine <- utils::combn(V(ig)$name, 1, simplify = F) -> nodes.combine
+ig \%>\% oAttack(measure = "combine", nodes.combine = nodes.combine) -> df_attackness
 # targeted attack (sequential removal of nodes preranked by attackness)
-nodes.prerank <- df_attackness \%>\% arrange(-frac.disconnected) \%>\% pull(nodes.removed)
-ig \%>\% oAttack(measure='prerank', nodes.prerank=nodes.prerank) -> df_res
+nodes.prerank <- df_attackness \%>\%
+  arrange(-frac.disconnected) \%>\%
+  pull(nodes.removed)
+ig \%>\% oAttack(measure = "prerank", nodes.prerank = nodes.prerank) -> df_res
 
 # combinatorial attack
 # 1) given combinations
-nodes.combine <- list(c('n1'),c('n1','n3','n5'))
-ig \%>\% oAttack(measure='combine', nodes.combine=nodes.combine)
+nodes.combine <- list(c("n1"), c("n1", "n3", "n5"))
+ig \%>\% oAttack(measure = "combine", nodes.combine = nodes.combine)
 # 2) combinations for any twos
-V(ig)$name \%>\% combn(2, simplify=F) -> nodes.combine
-oAttack(ig, measure="combine", nodes.combine=nodes.combine) \%>\% transmute(value=frac.disconnected, member=nodes.removed) -> data
-data \%>\% arrange(-value) \%>\% top_n(5, value) \%>\% oUpsetAdv(member.levels="num")
+V(ig)$name \%>\% combn(2, simplify = F) -> nodes.combine
+oAttack(ig, measure = "combine", nodes.combine = nodes.combine) \%>\% transmute(value = frac.disconnected, member = nodes.removed) -> data
+data \%>\%
+  arrange(-value) \%>\%
+  top_n(5, value) \%>\%
+  oUpsetAdv(member.levels = "num")
 # 3) a series of optimal combinations
 levels <- V(ig)$name
-tibble(i=seq(3)) \%>\% mutate(combine=map(i,~levels \%>\% combn(.x, simplify=F))) \%>\% mutate(res=map(combine, ~oAttack(ig, measure="combine", nodes.combine=.x) \%>\% select(frac.disconnected,nodes.removed) \%>\% top_n(1,frac.disconnected))) \%>\% select(i,res) \%>\% unnest(res) -> data
-data \%>\% transmute(value=frac.disconnected, member=nodes.removed) \%>\% oUpsetAdv(member.levels='customised',levels.customised=levels, label.height.unit=6.5) + scale_y_continuous(limits=c(0,1)) + geom_line(aes(group=i,color=as.factor(i))) + geom_point(aes(fill=as.factor(i)), shape=22, size=2, color="transparent")
+tibble(i = seq(3)) \%>\%
+  mutate(combine = map(i, ~ levels \%>\% combn(.x, simplify = F))) \%>\%
+  mutate(res = map(combine, ~ oAttack(ig, measure = "combine", nodes.combine = .x) \%>\%
+    select(frac.disconnected, nodes.removed) \%>\%
+    top_n(1, frac.disconnected))) \%>\%
+  select(i, res) \%>\%
+  unnest(res) -> data
+data \%>\%
+  transmute(value = frac.disconnected, member = nodes.removed) \%>\%
+  oUpsetAdv(member.levels = "customised", levels.customised = levels, label.height.unit = 6.5) + scale_y_continuous(limits = c(0, 1)) + geom_line(aes(group = i, color = as.factor(i))) + geom_point(aes(fill = as.factor(i)), shape = 22, size = 2, color = "transparent")
 # 4) optimal combinations in the context of predefined nodes
-nodes_predefined <- c('n2','n5')
+nodes_predefined <- c("n2", "n5")
 nodes_rest <- setdiff(V(ig)$name, nodes_predefined)
 levels.customised <- c(nodes_predefined, nodes_rest)
-tibble(i=seq(3)) \%>\% mutate(combine=map(i,~nodes_rest \%>\% combn(.x,simplify=F) \%>\% lapply(function(y) union(y,nodes_predefined)))) \%>\% mutate(res=map(combine, ~oAttack(ig, measure="combine", nodes.combine=.x) \%>\% select(frac.disconnected,nodes.removed) \%>\% top_n(1,frac.disconnected))) \%>\% select(i,res) \%>\% unnest(res) -> data
-data \%>\% transmute(value=frac.disconnected, member=nodes.removed) \%>\% oUpsetAdv(member.levels='customised',levels.customised=levels.customised, label.height.unit=6.5) + scale_y_continuous(limits=c(0,1)) + geom_line(aes(group=i,color=as.factor(i))) + geom_point(aes(fill=as.factor(i)), shape=22, size=2, color="transparent")
+tibble(i = seq(3)) \%>\%
+  mutate(combine = map(i, ~ nodes_rest \%>\%
+    combn(.x, simplify = F) \%>\%
+    lapply(function(y) union(y, nodes_predefined)))) \%>\%
+  mutate(res = map(combine, ~ oAttack(ig, measure = "combine", nodes.combine = .x) \%>\%
+    select(frac.disconnected, nodes.removed) \%>\%
+    top_n(1, frac.disconnected))) \%>\%
+  select(i, res) \%>\%
+  unnest(res) -> data
+data \%>\%
+  transmute(value = frac.disconnected, member = nodes.removed) \%>\%
+  oUpsetAdv(member.levels = "customised", levels.customised = levels.customised, label.height.unit = 6.5) + scale_y_continuous(limits = c(0, 1)) + geom_line(aes(group = i, color = as.factor(i))) + geom_point(aes(fill = as.factor(i)), shape = 22, size = 2, color = "transparent")
 }
 }
 \seealso{

@@ -61,9 +61,9 @@ none
 # get predictor matrix for targets
 df_score <- oPierMatrix(ls_pNode)
 # get evidence for targets
-eTarget <- oPierMatrix(ls_pNode, displayBy="evidence")
+eTarget <- oPierMatrix(ls_pNode, displayBy = "evidence")
 # get target priority in a discovery mode
-dTarget <- oPierMatrix(ls_pNode, displayBy="pvalue", aggregateBy="fishers")
+dTarget <- oPierMatrix(ls_pNode, displayBy = "pvalue", aggregateBy = "fishers")
 }
 }
 \seealso{

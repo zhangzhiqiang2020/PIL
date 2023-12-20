@@ -56,7 +56,7 @@ none
 \examples{
 \dontrun{
 obj \%>\% oSEAballoon()
-#obj \%>\% oSEAextract() \%>\% filter(onto=='KEGG',group==694009) \%>\% ggdotchart('name',y='zscore',color='nO', facet='group',add='segments',rotate=T,label='or',font.label=list(color='white',vjust=0.5,size=9),dot.size=6) + theme_pubr(base_size=6) + scale_y_continuous(position="top")
+# obj \%>\% oSEAextract() \%>\% filter(onto=='KEGG',group==694009) \%>\% ggdotchart('name',y='zscore',color='nO', facet='group',add='segments',rotate=T,label='or',font.label=list(color='white',vjust=0.5,size=9),dot.size=6) + theme_pubr(base_size=6) + scale_y_continuous(position="top")
 }
 }
 \seealso{

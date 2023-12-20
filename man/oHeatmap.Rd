@@ -92,10 +92,10 @@ none
 \examples{
 \dontrun{
 data(mtcars)
-gp <- oHeatmap(mtcars, reorder="none", colormap='jet.top', x.rotate=45, shape=19, size=3, x.text.size=8,y.text.size=8, legend.title='mtcars')
-gp + theme(legend.position="bottom",legend.direction="horizontal") + guides(color=guide_colorbar(title="mtcars",title.position="top",barwidth=5,barheight=0.3))
-gp + theme(legend.position="bottom",legend.direction="horizontal") + guides(color=guide_legend(title="mtcars",title.position="top",barwidth=5,barheight=0.3))
-gp + geom_text(aes(x, y, label=val),size=1.8,color='black',fontface='bold',na.rm=TRUE,angle=45)
+gp <- oHeatmap(mtcars, reorder = "none", colormap = "jet.top", x.rotate = 45, shape = 19, size = 3, x.text.size = 8, y.text.size = 8, legend.title = "mtcars")
+gp + theme(legend.position = "bottom", legend.direction = "horizontal") + guides(color = guide_colorbar(title = "mtcars", title.position = "top", barwidth = 5, barheight = 0.3))
+gp + theme(legend.position = "bottom", legend.direction = "horizontal") + guides(color = guide_legend(title = "mtcars", title.position = "top", barwidth = 5, barheight = 0.3))
+gp + geom_text(aes(x, y, label = val), size = 1.8, color = "black", fontface = "bold", na.rm = TRUE, angle = 45)
 }
 }
 \seealso{

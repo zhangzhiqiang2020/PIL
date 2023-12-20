@@ -12,8 +12,9 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
 Collate: 
-    'ClassMethod-PIONE.r'
+    'ClassMethod-PIL.r'
     'oAttack.r'
+    'oAttackDrug.r'
     'oCheckParallel.r'
     'oColormap.r'
     'oCombineNet.r'
@@ -43,7 +44,7 @@ Collate:
     'oSymbol2GeneID.r'
     'oTB2IG.r'
     'oUpsetAdv.r'
+    'oVisDrugAtt.r'
     'oVisEvidence.r'
     'oVisEvidenceAdv.r'
-    'test.r'
 Imports: BiocGenerics, ggraph, dplyr, forcats, GenomicRanges, ggnetwork, ggrepel, IRanges, magrittr, Matrix, methods, osfr, purrr, readr, stats, stringr, tibble, tidyr, XML, pbapply, curl

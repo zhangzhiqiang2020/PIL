@@ -43,14 +43,18 @@ none
 }
 \examples{
 \dontrun{
-obj \%>\% transmute(value=nO, member=overlap) -> data
-#data \%>\% arrange(-value) \%>\% mutate(member=fct_inorder(member)) -> data
+obj \%>\% transmute(value = nO, member = overlap) -> data
+# data \%>\% arrange(-value) \%>\% mutate(member=fct_inorder(member)) -> data
 data \%>\% oUpsetAdv() -> gp
-gp + geom_point(aes(fill=as.factor(i)), shape=22, size=2, color="transparent") + geom_line(aes(group=i,color=as.factor(i)))
+gp + geom_point(aes(fill = as.factor(i)), shape = 22, size = 2, color = "transparent") + geom_line(aes(group = i, color = as.factor(i)))
 
 # customised levels for members
-data \%>\% separate_rows(member,sep=',') \%>\% arrange(member) \%>\% pull(member) \%>\% unique() -> levels
-data \%>\% oUpsetAdv(member.levels='customised',levels.customised=levels)
+data \%>\%
+  separate_rows(member, sep = ",") \%>\%
+  arrange(member) \%>\%
+  pull(member) \%>\%
+  unique() -> levels
+data \%>\% oUpsetAdv(member.levels = "customised", levels.customised = levels)
 }
 }
 \seealso{
