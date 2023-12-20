@@ -20,7 +20,7 @@
 
 oVisDrugAtt <- function(data, member.sortBy = NULL, color = "cyan4", shape = 18, size = 2, drugs.customised = NULL) {
 
-  member <- value <- i <- NULL
+  i <- NULL
 
  levels <- NULL
  df <- NULL
