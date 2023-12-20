@@ -7,7 +7,7 @@
 #' @param nodes.prerank a vector containing nodes preranked for targeted attack. Only works when measure is 'prerank'
 #' @param nodes.combine a list containing nodes combined for combinatorial attack. Only works when measure is 'combine'
 #' @return 
-#' a tibble with 4 columns, including 'measure', 'frac.disconnected' (fraction of network nodes disconnected from the giant component), 'frac.removed' (fraction of network nodes removed), 'nodes.removed' (nodes removed, provided separated by ',').
+#' a tibble with 4 columns, including 'measure', 'frac.disconnected' (fraction of network nodes disconnected from the giant component), 'frac.removed' (fraction of network nodes removed), 'nodes.removed' (nodes removed, provided separated by ','), and 'i' for the number of nodes removed.
 #' @note none
 #' @export
 #' @seealso \code{\link{oAttack}}
@@ -107,7 +107,8 @@ oAttack <- function(ig, measure=c('degree','betweenness','prerank','combine'), n
 		
     }
 	
-	res <- tibble::tibble(measure=measure, frac.disconnected=1-comp.pct, frac.removed=removed.pct, nodes.removed=nodes.removed)
+	res <- tibble::tibble(measure=measure, frac.disconnected=1-comp.pct, frac.removed=removed.pct, nodes.removed=nodes.removed) %>% dplyr::mutate(i=1+stringr::str_count(nodes.removed,','))
+
 
     return(res)
 }

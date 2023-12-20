@@ -26,7 +26,7 @@
 #' @importFrom purrr map map2 map_dbl map_int map_lgl
 #' @importFrom readr read_delim
 #' @importFrom stats approx splinefun integrate sd median mad ecdf na.omit predict prcomp lm quantile as.dist hclust cor as.dendrogram order.dendrogram wilcox.test coef p.adjust dist ecdf pexp predict t.test
-#' @importFrom stringr str_detect str_replace str_replace_all str_split str_to_title str_c
+#' @importFrom stringr str_detect str_replace str_replace_all str_split str_to_title str_c str_count
 #' @importFrom tibble as_tibble deframe enframe
 #' @importFrom tidyr gather spread
 #' @importFrom XML htmlTreeParse xmlGetAttr
