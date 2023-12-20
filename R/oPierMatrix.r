@@ -362,7 +362,7 @@ oPierMatrix <- function(list_pNode, displayBy=c("score","rank","weight","pvalue"
 			priority <- data.frame(df_priority[,c("name","rank","rating","description")], seed=ifelse(overall!=0,'Y','N'), mat_evidence[,ind[!is.na(ind)]], stringsAsFactors=FALSE)
 			
 			priority <- priority %>% tibble::as_tibble()
-			df_predictor <- df_predictor %>% tibble::as_tibble()
+			df_predictor <- df_predictor %>% as.data.frame()  # tibble::as_tibble()
 			
 			if(keep){
 				dTarget <- list(priority  = priority,
