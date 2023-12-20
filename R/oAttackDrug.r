@@ -23,7 +23,7 @@ oAttackDrug <- function(ig,drug.nodes=NULL,drugs.fixed=NULL,combine.num=1) {
     }
     ## check drugs.fixed 
     if(!is.null(drugs.fixed)){
-  
+  X
       ##fixed drug nodes
       fixed.nodes <-  as.character(unlist(drug.nodes[drugs.fixed]))
       
@@ -37,7 +37,7 @@ oAttackDrug <- function(ig,drug.nodes=NULL,drugs.fixed=NULL,combine.num=1) {
         drug.nodes <- drug.nodes
         
       }else{
-        drug.combined <- combn(names(drug.nodes),combine.times,simplify=F)
+        drug.combined <- combn(names(drug.nodes),combine.num,simplify=F)
         drug.nodes.combine <- lapply(drug.combined, function (x) { 
                              unique(as.character(unlist(sapply(x, function(m){drug.nodes[[m]]}))))})
         names(drug.nodes.combine) <-  sapply(drug.combined, function(x){paste0(x,collapse = " + ")})
