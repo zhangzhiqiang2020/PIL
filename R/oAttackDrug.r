@@ -41,7 +41,7 @@ oAttackDrug <- function(ig,drug.nodes=NULL,drugs.fixed=NULL,combine.num=1) {
     }
     ## check drugs.fixed 
     if(!is.null(drugs.fixed)){
-  X
+
       ##fixed drug nodes
       fixed.nodes <-  as.character(unlist(drug.nodes[drugs.fixed]))
       
