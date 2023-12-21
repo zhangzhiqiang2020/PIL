@@ -43,7 +43,7 @@ oPierSubnet <- function(pNode, priority.quantile=0.1, network=NA, STRING.only=NA
     aggregateBy <- match.arg(aggregateBy)
     
     if(is(pNode,"pNode")){
-        df_priority <- pNode$priority[, "seed","weight","priority")] 
+        df_priority <- pNode$priority[, c("seed","weight","priority")] 
         
 		network <- network[1]
 		if(!is.na(network)){
