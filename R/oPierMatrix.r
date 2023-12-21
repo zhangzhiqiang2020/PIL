@@ -41,8 +41,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
 {
   startT <- Sys.time()
   if (verbose) {
-    message(paste(c("Start at ", as.character(startT)), collapse = ""), 
-            appendLF = TRUE)
+    message(paste(c("Start at ", as.character(startT)), collapse = ""), appendLF = TRUE)
     message("", appendLF = TRUE)
   }
   displayBy <- match.arg(displayBy)
@@ -50,20 +49,17 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
   aggregateBy <- match.arg(aggregateBy)
   if (is(list_pNode, "pNode")) {
     list_pNode <- list(list_pNode)
-  }
-  else if (is(list_pNode, "list")) {
+  }else if (is(list_pNode, "list")) {
     list_pNode <- base::Filter(base::Negate(is.null), list_pNode)
     if (length(list_pNode) == 0) {
       return(NULL)
     }
-  }
-  else {
+  }else {
     stop("The function must apply to 'list' of 'pNode' objects or a 'pNode' object.\n")
   }
   list_names <- names(list_pNode)
   if (is.null(list_names)) {
-    list_names <- paste("Predictor", 1:length(list_pNode), 
-                        sep = " ")
+    list_names <- paste("Predictor", 1:length(list_pNode), sep = " ")
     names(list_pNode) <- list_names
   }
   ls_nodes <- lapply(list_pNode, function(x) {
@@ -71,34 +67,24 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
   })
   if (combineBy == "intersect") {
     nodes <- base::Reduce(intersect, ls_nodes)
-  }
-  else if (combineBy == "union") {
+  }else if (combineBy == "union") {
     nodes <- base::Reduce(union, ls_nodes)
   }
   nodes <- sort(nodes)
-  if (displayBy == "evidence" | (displayBy == "pvalue" & aggregateBy != 
-                                 "none") | (displayBy == "score" & (aggregateBy %in% c("harmonic", 
-                                                                                       "max", "sum")))) {
+  if (displayBy == "evidence" | (displayBy == "pvalue" & aggregateBy != "none") | (displayBy == "score" & (aggregateBy %in% c("harmonic", "max", "sum")))) {
     predictor_names <- names(list_pNode)
     predictor_names <- gsub("_.*", "", predictor_names)
     ls_df <- lapply(1:length(list_pNode), function(i) {
       pNode <- list_pNode[[i]]
-      genes <- rownames(pNode$priority)[pNode$priority$seed ==           **************
-                                          1]
-      df <- data.frame(Gene = genes, Predictor = rep(predictor_names[i], 
-                                                     length(genes)), stringsAsFactors = FALSE)
+      genes <-  pNode$priority %>% filter(seed==1) %>% pull(name)     #rownames(pNode$priority)[pNode$priority$seed == 1]
+      df <- data.frame(Gene = genes, Predictor = rep(predictor_names[i], length(genes)), stringsAsFactors = FALSE)
     })
     df <- do.call(rbind, ls_df)
-    mat_evidence <- as.matrix(oSparseMatrix(df, rows = nodes, 
-                                            columns = NULL, verbose = FALSE))
+    mat_evidence <- as.matrix(oSparseMatrix(df, rows = nodes, columns = NULL, verbose = FALSE))
     if (ncol(mat_evidence) > 1) {
-      mat_evidence <- mat_evidence[order(mat_evidence[, 
-                                                      1], apply(mat_evidence, 1, sum), decreasing = TRUE), 
-      ]
-    }
-    else {
-      tmp <- mat_evidence[order(mat_evidence[, 1], apply(mat_evidence, 
-                                                         1, sum), decreasing = TRUE), ]
+      mat_evidence <- mat_evidence[order(mat_evidence[, 1], apply(mat_evidence, 1, sum), decreasing = TRUE),]
+    } else {
+      tmp <- mat_evidence[order(mat_evidence[, 1], apply(mat_evidence, 1, sum), decreasing = TRUE), ]
       tmp_matrix <- matrix(tmp, ncol = ncol(mat_evidence))
       colnames(tmp_matrix) <- colnames(mat_evidence)
       rownames(tmp_matrix) <- names(tmp)
@@ -109,37 +95,30 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
         relations <- igraph::get.data.frame(x$g, what = "edges")
       })
       edges <- do.call(rbind, ls_edges) %>% unique()
-      metag <- igraph::graph.data.frame(d = edges, directed = FALSE, 
-                                        vertices = nodes)
-    }
-    else {
-      edges <- igraph::get.data.frame(list_pNode[[1]]$g, 
-                                      what = "edges")
-      metag <- igraph::graph.data.frame(d = edges, directed = FALSE, 
-                                        vertices = nodes)
+      metag <- igraph::graph.data.frame(d = edges, directed = FALSE, vertices = nodes)
+    } else {
+      edges <- igraph::get.data.frame(list_pNode[[1]]$g,  what = "edges")
+      metag <- igraph::graph.data.frame(d = edges, directed = FALSE,  vertices = nodes)
     }
   }
   if (displayBy != "evidence") {
     ls_priority <- pbapply::pblapply(list_pNode, function(pNode) {
-      p <- pNode$priority
-      ind <- match(nodes, rownames(p))
+      p <- pNode$priority 
+      ind <- match(nodes, p %>% pull(name))
       if (displayBy == "score" | displayBy == "pvalue") {
         res <- p[ind, c("priority")]
-      }
-      else if (displayBy == "rank") {
+      }else if (displayBy == "rank") {
         res <- p[ind, c("rank")]
-      }
-      else if (displayBy == "weight") {
+      }else if (displayBy == "weight") {
         res <- p[ind, c("weight")]
       }
     })
     df_predictor <- do.call(cbind, ls_priority)
     rownames(df_predictor) <- nodes
-    if (displayBy == "score" | displayBy == "weight" | displayBy == 
-        "pvalue") {
+    colnames(df_predictor) <- names(list_pNode)
+    if (displayBy == "score" | displayBy == "weight" | displayBy == "pvalue") {
       df_predictor[is.na(df_predictor)] <- 0
-    }
-    else if (displayBy == "rank") {
+    }else if (displayBy == "rank") {
       df_predictor[is.na(df_predictor)] <- length(nodes)
     }
   }
@@ -154,18 +133,15 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
     colnames(df_pval) <- colnames(df_predictor)
     df_predictor <- df_pval
     if (aggregateBy != "none") {
-      df_ap <- dnet::dPvalAggregate(pmatrix = df_predictor, 
-                                    method = aggregateBy)
+      df_ap <- dnet::dPvalAggregate(pmatrix = df_predictor,  method = aggregateBy)
       df_ap <- sort(df_ap, decreasing = FALSE)
       df_rank <- rank(df_ap, ties.method = "min")
       df_ap[df_ap == 0] <- min(df_ap[df_ap != 0])
       df_adjp <- stats::p.adjust(df_ap, method = "BH")
       rating <- -log10(df_ap)
       rating <- sqrt(rating)
-      rating <- rangeMax * (rating - min(rating))/(max(rating) - 
-                                                     min(rating))
-      df_priority <- data.frame(name = names(df_ap), rank = df_rank, 
-                                pvalue = df_ap, fdr = df_adjp, rating = rating, 
+      rating <- rangeMax * (rating - min(rating))/(max(rating) - min(rating))
+      df_priority <- data.frame(name = names(df_ap), rank = df_rank,  pvalue = df_ap, fdr = df_adjp, rating = rating, 
                                 stringsAsFactors = FALSE)
       df_priority$description <- oSymbol2GeneID(df_priority$name, 
                                                 details = TRUE, verbose = verbose, placeholder = placeholder, 
@@ -173,8 +149,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       ind <- match(names(df_ap), rownames(df_predictor))
       if (ncol(df_predictor) > 1) {
         df_predictor <- df_predictor[ind, ]
-      }
-      else {
+      }else {
         tmp <- df_predictor[ind, ]
         tmp_matrix <- matrix(tmp, ncol = ncol(df_predictor))
         colnames(tmp_matrix) <- colnames(df_predictor)
@@ -185,8 +160,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       ind_col <- match(unique(predictor_names), colnames(mat_evidence))
       if (ncol(mat_evidence) > 1) {
         mat_evidence <- mat_evidence[ind_row, ind_col]
-      }
-      else {
+      } else {
         tmp <- mat_evidence[ind_row, ind_col]
         tmp_matrix <- matrix(tmp, ncol = ncol(mat_evidence))
         colnames(tmp_matrix) <- colnames(mat_evidence)
@@ -195,47 +169,36 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       }
       overall <- apply(mat_evidence != 0, 1, sum)
       if (0) {
-        ind <- match(c("nGene", "cGene", "eGene", "dGene", 
-                       "pGene", "fGene"), colnames(mat_evidence))
-      }
-      else {
+        ind <- match(c("nGene", "cGene", "eGene", "dGene", "pGene", "fGene"), colnames(mat_evidence))
+      } else {
         ind <- match(unique(predictor_names), colnames(mat_evidence))
       }
-      priority <- data.frame(df_priority[, c("name", "rank", 
-                                             "rating", "description")], seed = ifelse(overall != 
-                                                                                        0, "Y", "N"), mat_evidence[, ind[!is.na(ind)]], 
+      priority <- data.frame(df_priority[, c("name", "rank", "rating", "description")], seed = ifelse(overall !=  0, "Y", "N"), mat_evidence[, ind[!is.na(ind)]], 
                              stringsAsFactors = FALSE)
       if (keep) {
         dTarget <- list(priority = priority, predictor = df_predictor, 
                         metag = metag, list_pNode = list_pNode)
         class(dTarget) <- "dTarget"
-      }
-      else {
+      } else {
         dTarget <- list(priority = priority, predictor = df_predictor, 
                         metag = metag, list_pNode = NULL)
         class(dTarget) <- "dTarget"
       }
       df_predictor <- dTarget
     }
-  }
-  else if (displayBy == "evidence") {
+  } else if (displayBy == "evidence") {
     ind_col <- match(unique(predictor_names), colnames(mat_evidence))
     mat_evidence <- mat_evidence[, ind_col]
     overall <- apply(mat_evidence != 0, 1, sum)
-    eTarget <- list(evidence = data.frame(Overall = overall, 
-                                          mat_evidence), metag = metag)
+    eTarget <- list(evidence = data.frame(Overall = overall, mat_evidence), metag = metag)
     class(eTarget) <- "eTarget"
     df_predictor <- eTarget
-  }
-  else if (displayBy == "score" & (aggregateBy %in% c("harmonic", 
-                                                      "max", "sum"))) {
+  } else if (displayBy == "score" & (aggregateBy %in% c("harmonic",  "max", "sum"))) {
     if (aggregateBy == "max") {
       summaryFun <- max
-    }
-    else if (aggregateBy == "sum") {
+    } else if (aggregateBy == "sum") {
       summaryFun <- sum
-    }
-    else if (aggregateBy == "harmonic") {
+    } else if (aggregateBy == "harmonic") {
       summaryFun <- function(x) {
         base::sum(x/base::rank(-x, ties.method = "min")^2)
       }
@@ -245,8 +208,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       df_harmonic <- sort(df_harmonic, decreasing = T)
       df_rank <- rank(-df_harmonic, ties.method = "min")
       rating <- sqrt(df_harmonic)
-      rating <- rangeMax * (rating - min(rating))/(max(rating) - 
-                                                     min(rating))
+      rating <- rangeMax * (rating - min(rating))/(max(rating) - min(rating))
       df_priority <- data.frame(name = names(df_harmonic), 
                                 rank = df_rank, harmonic = df_harmonic, rating = rating, 
                                 stringsAsFactors = FALSE)
@@ -256,8 +218,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       ind <- match(names(df_harmonic), rownames(df_predictor))
       if (ncol(df_predictor) > 1) {
         df_predictor <- df_predictor[ind, ]
-      }
-      else {
+      } else {
         tmp <- df_predictor[ind, ]
         tmp_matrix <- matrix(tmp, ncol = ncol(df_predictor))
         colnames(tmp_matrix) <- colnames(df_predictor)
@@ -268,8 +229,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       ind_col <- match(unique(predictor_names), colnames(mat_evidence))
       if (ncol(mat_evidence) > 1) {
         mat_evidence <- mat_evidence[ind_row, ind_col]
-      }
-      else {
+      } else {
         tmp <- mat_evidence[ind_row, ind_col]
         tmp_matrix <- matrix(tmp, ncol = ncol(mat_evidence))
         colnames(tmp_matrix) <- colnames(mat_evidence)
@@ -280,20 +240,17 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
       if (0) {
         ind <- match(c("nGene", "cGene", "eGene", "dGene", 
                        "pGene", "fGene"), colnames(mat_evidence))
-      }
-      else {
+      } else {
         ind <- match(unique(predictor_names), colnames(mat_evidence))
       }
       priority <- data.frame(df_priority[, c("name", "rank", 
-                                             "rating", "description")], seed = ifelse(overall != 
-                                                                                        0, "Y", "N"), mat_evidence[, ind[!is.na(ind)]], 
+                                             "rating", "description")], seed = ifelse(overall !=  0, "Y", "N"), mat_evidence[, ind[!is.na(ind)]], 
                              stringsAsFactors = FALSE)
       if (keep) {
         dTarget <- list(priority = priority, predictor = df_predictor, 
                         metag = metag, list_pNode = list_pNode)
         class(dTarget) <- "dTarget"
-      }
-      else {
+      } else {
         dTarget <- list(priority = priority, predictor = df_predictor, 
                         metag = metag, list_pNode = NULL)
         class(dTarget) <- "dTarget"
@@ -305,14 +262,12 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
     if (displayBy == "evidence") {
       message(sprintf("A matrix of %d genes x %d evidence are generated", 
                       nrow(mat_evidence), ncol(mat_evidence)), appendLF = TRUE)
-    }
-    else {
+    } else {
       if (displayBy == "pvalue" & aggregateBy != "none") {
         message(sprintf("A total of %d genes are prioritised, combined by '%s' and aggregated by '%s' from %d predictors", 
                         nrow(df_predictor$priority), combineBy, aggregateBy, 
                         length(list_pNode)), appendLF = TRUE)
-      }
-      else {
+      } else {
         message(sprintf("A matrix of %d genes x %d predictors are generated, displayed by '%s' and combined by '%s'", 
                         nrow(df_predictor), ncol(df_predictor), displayBy, 
                         combineBy), appendLF = TRUE)
@@ -323,7 +278,7 @@ oPierMatrix <- function (list_pNode, displayBy = c("score", "rank", "weight", "p
   if (verbose) {
     message(paste(c("\nFinish at ", as.character(endT)), 
                   collapse = ""), appendLF = TRUE)
-  }
+    }
   runTime <- as.numeric(difftime(strptime(endT, "%Y-%m-%d %H:%M:%S"), 
                                  strptime(startT, "%Y-%m-%d %H:%M:%S"), units = "secs"))
   message(paste(c("Runtime in total is: ", runTime, " secs\n"), 
